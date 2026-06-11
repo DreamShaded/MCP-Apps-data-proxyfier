@@ -5,11 +5,17 @@ import { ProductCard } from "./product-card";
 export function SearchView({
   result,
   onOpenProduct,
+  onAddToCart,
   loadingId,
+  addingId,
 }: {
   result: SearchResult;
   onOpenProduct: (id: string, url: string | null) => void;
+  onAddToCart: (id: string, url: string | null) => void;
+  /** Какая карточка грузит деталку (`get_product`). */
   loadingId: string | null;
+  /** Какая карточка добавляется в корзину (`add_to_cart`). */
+  addingId: string | null;
 }) {
   const { query, products, stale } = result;
   return (
@@ -32,10 +38,12 @@ export function SearchView({
               key={p.id}
               product={p}
               onOpen={() => onOpenProduct(p.id, p.url)}
+              onAdd={() => onAddToCart(p.id, p.url)}
               loading={loadingId === p.id}
-              // Пока грузится любая деталка — гасим «Подробнее» у всех карточек,
-              // чтобы второй клик не запустил гонку параллельных get_product.
-              busy={loadingId !== null}
+              adding={addingId === p.id}
+              // Пока идёт любая операция (деталка/добавление) — гасим кнопки у всех
+              // карточек, чтобы второй клик не запустил гонку параллельных вызовов.
+              busy={loadingId !== null || addingId !== null}
             />
           ))}
         </div>

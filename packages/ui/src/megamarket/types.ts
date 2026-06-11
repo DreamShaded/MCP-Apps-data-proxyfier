@@ -47,3 +47,36 @@ export interface GetProductResult {
   fallback: boolean;
   fetchedAt: string | null;
 }
+
+/** Позиция реальной корзины. Зеркалит `cartItemSchema` (граница postMessage-моста). */
+export interface CartItem {
+  id: string;
+  title: string;
+  price: number | null;
+  quantity: number;
+  imageUrl: string | null;
+  url: string | null;
+  lineTotal: number | null;
+}
+
+/** Состояние реальной корзины Megamarket. Зеркалит `cartSchema`. */
+export interface Cart {
+  items: CartItem[];
+  totalCount: number;
+  totalPrice: number | null;
+}
+
+/** Результат `add_to_cart`. Зеркалит `addToCartResultSchema`. */
+export interface AddToCartResult {
+  cart: Cart | null;
+  added: boolean;
+  fallback: boolean;
+  fetchedAt: string | null;
+}
+
+/** Результат `view_cart`. Зеркалит `viewCartResultSchema`. */
+export interface ViewCartResult {
+  cart: Cart | null;
+  fallback: boolean;
+  fetchedAt: string | null;
+}

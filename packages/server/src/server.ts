@@ -5,6 +5,8 @@ import { registerCheckSessionTool } from "./check-session-tool.js";
 import { registerMegamarketUiResource } from "./megamarket/megamarket-ui-resource.js";
 import { registerSearchProductsTool } from "./megamarket/search-products-tool.js";
 import { registerGetProductTool } from "./megamarket/get-product-tool.js";
+import { registerAddToCartTool } from "./megamarket/add-to-cart-tool.js";
+import { registerViewCartTool } from "./megamarket/view-cart-tool.js";
 import { createBrowserSession } from "./browser/create-session.js";
 import { createCache } from "./cache/create-cache.js";
 import type { BrowserDriver } from "./browser/browser-driver.js";
@@ -51,6 +53,10 @@ export function createServer(deps: ServerDeps = {}): McpServer {
   registerMegamarketUiResource(server, megamarketHtml);
   registerSearchProductsTool(server, { driver, reader });
   registerGetProductTool(server, { driver, reader });
+  // Корзина = реальный сайт: запись/чтение изменчивого состояния идут мимо кэш-слоя,
+  // только через шов браузера (сериализованы его мьютексом).
+  registerAddToCartTool(server, { driver });
+  registerViewCartTool(server, { driver });
 
   return server;
 }

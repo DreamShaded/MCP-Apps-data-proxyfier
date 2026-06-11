@@ -12,10 +12,21 @@ function formatPrice(value: number): string {
  * компоновка вместо широкой десктопной — адаптация под узкий чат-iframe.
  *
  * «Назад» — чисто клиентское переключение (родитель держит выдачу в стейте), поэтому
- * это обычный onClick без обращения к серверу. Корзина появится в следующем срезе —
- * пока кнопка презентационная (визуальное соответствие настоящей странице товара).
+ * это обычный onClick без обращения к серверу. «В корзину» инициирует app-side
+ * `add_to_cart(id)` через родителя; во время живого добавления кнопка показывает спиннер.
  */
-export function ProductDetailView({ detail, onBack }: { detail: ProductDetail; onBack: () => void }) {
+export function ProductDetailView({
+  detail,
+  onBack,
+  onAddToCart,
+  adding,
+}: {
+  detail: ProductDetail;
+  onBack: () => void;
+  onAddToCart: () => void;
+  /** Идёт живое добавление этой карточки в корзину — спиннер в CTA. */
+  adding: boolean;
+}) {
   const { title, price, oldPrice, discountPercent, rating, reviewCount, images, specs, description } = detail;
   const [active, setActive] = useState(0);
   const main = images[active] ?? images[0] ?? null;
@@ -77,8 +88,15 @@ export function ProductDetailView({ detail, onBack }: { detail: ProductDetail; o
         ) : null}
       </div>
 
-      <button type="button" className="mm-cta">
-        В корзину
+      <button type="button" className="mm-cta" onClick={onAddToCart} disabled={adding}>
+        {adding ? (
+          <>
+            <span className="mm-spinner mm-spinner--on-brand" aria-hidden="true" />
+            Добавляем…
+          </>
+        ) : (
+          "В корзину"
+        )}
       </button>
 
       {specs.length ? (

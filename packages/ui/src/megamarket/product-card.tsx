@@ -6,21 +6,27 @@ function formatPrice(value: number): string {
 }
 
 /**
- * Карточка товара выдачи: фото, скидка, название, цена, рейтинг, «Подробнее». Компактная
- * под чат-iframe. «Подробнее» инициирует app-side `get_product(id)` через родителя —
- * нового пузыря в чате нет, обновляется тот же App.
+ * Карточка товара выдачи: фото, скидка, название, цена, рейтинг, «В корзину» + «Подробнее».
+ * Компактная под чат-iframe. «Подробнее» инициирует app-side `get_product(id)`, «В корзину»
+ * — app-side `add_to_cart(id)` через родителя; нового пузыря в чате нет, обновляется тот же
+ * App. Во время живого добавления карточка показывает индикатор загрузки в самой кнопке.
  */
 export function ProductCard({
   product,
   onOpen,
+  onAdd,
   loading,
+  adding,
   busy,
 }: {
   product: Product;
   onOpen: () => void;
+  onAdd: () => void;
   /** Грузится именно эта карточка — показываем «Загружаем…». */
   loading: boolean;
-  /** Грузится какая-то деталка (возможно другая) — кнопка заблокирована против гонки. */
+  /** В корзину добавляется именно эта карточка — спиннер в кнопке «В корзину». */
+  adding: boolean;
+  /** Идёт какая-то операция (деталка/добавление) — кнопки заблокированы против гонки. */
   busy: boolean;
 }) {
   const { title, price, oldPrice, discountPercent, imageUrl, rating, reviewCount } = product;
@@ -59,9 +65,21 @@ export function ProductCard({
           <div className="mm-card__rating mm-card__rating--empty">Нет оценок</div>
         )}
 
-        <button type="button" className="mm-card__more" onClick={onOpen} disabled={busy}>
-          {loading ? "Загружаем…" : "Подробнее"}
-        </button>
+        <div className="mm-card__actions">
+          <button type="button" className="mm-card__add" onClick={onAdd} disabled={busy}>
+            {adding ? (
+              <>
+                <span className="mm-spinner" aria-hidden="true" />
+                Добавляем…
+              </>
+            ) : (
+              "В корзину"
+            )}
+          </button>
+          <button type="button" className="mm-card__more" onClick={onOpen} disabled={busy}>
+            {loading ? "Загружаем…" : "Подробнее"}
+          </button>
+        </div>
       </div>
     </article>
   );
