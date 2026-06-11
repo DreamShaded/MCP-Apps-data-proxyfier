@@ -187,3 +187,186 @@ body {
   font-size: 15px;
   font-weight: 700;
 }
+
+/* --- Кнопка «Подробнее» на карточке выдачи --- */
+.mm-card__more {
+  margin-top: 4px;
+  padding: 7px 10px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-chip);
+  background: var(--mm-brand-soft);
+  color: var(--mm-brand-dark);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mm-card__more:hover:not(:disabled) {
+  border-color: var(--mm-brand);
+}
+.mm-card__more:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* --- Навигация «Назад» (деталка ⇄ выдача, чисто клиентская) --- */
+.mm-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px 4px 4px;
+  border: none;
+  background: transparent;
+  color: var(--mm-brand);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mm-back__chevron {
+  font-size: 20px;
+  line-height: 1;
+}
+.mm-back:hover {
+  color: var(--mm-brand-dark);
+}
+
+/* --- Вью деталки товара (вертикальная компоновка под чат-iframe) --- */
+.mm-detail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mm-detail__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mm-detail__stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--mm-brand-soft);
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-image);
+  overflow: hidden;
+}
+.mm-detail__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.mm-detail__thumbs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mm-detail__thumb {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-chip);
+  background: var(--mm-card-bg);
+  overflow: hidden;
+  cursor: pointer;
+}
+.mm-detail__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.mm-detail__thumb--active {
+  border-color: var(--mm-brand);
+  box-shadow: 0 0 0 1px var(--mm-brand);
+}
+
+.mm-detail__title {
+  margin: 12px 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--mm-text);
+}
+.mm-detail__rating {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.mm-detail__prices {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.mm-detail__price {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--mm-text);
+}
+.mm-detail__old-price {
+  font-size: 15px;
+}
+
+/* Главная CTA «в корзину» — фирменный градиент бренда. */
+.mm-cta {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--mm-radius-chip);
+  background: linear-gradient(135deg, var(--mm-gradient-from), var(--mm-gradient-to));
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mm-cta:hover {
+  filter: brightness(1.05);
+}
+
+.mm-detail__section {
+  margin-top: 18px;
+}
+.mm-detail__subtitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mm-text);
+}
+
+.mm-specs {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.mm-specs__row {
+  display: flex;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--mm-border);
+  font-size: 13px;
+}
+.mm-specs__name {
+  flex: 0 0 45%;
+  margin: 0;
+  color: var(--mm-text-muted);
+}
+.mm-specs__value {
+  flex: 1;
+  margin: 0;
+  color: var(--mm-text);
+  font-weight: 500;
+}
+
+.mm-detail__description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mm-text);
+}

@@ -47,3 +47,39 @@ export const searchResultSchema = z.object({
 });
 
 export type SearchResult = z.infer<typeof searchResultSchema>;
+
+/** Характеристика товара на деталке: пара «название — значение» (вес, цвет, гарантия…). */
+export const productSpecSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+});
+
+export type ProductSpec = z.infer<typeof productSpecSchema>;
+
+/**
+ * Детальная карточка товара — то, что отдаёт `get_product` и рисует вью деталки.
+ * Расширяет «плоский» товар выдачи галереей, описанием и характеристиками; всё, чего
+ * может не быть на живой странице, — опционально/пустой массив, а не обязательное поле.
+ */
+export const productDetailSchema = productSchema.extend({
+  /** Галерея: первый кадр — главный. Пусто, если со страницы не сняли ни одного фото. */
+  images: z.array(z.string()),
+  /** Характеристики таблицей; пустой массив, если блок не распознан. */
+  specs: z.array(productSpecSchema),
+  /** Текстовое описание товара; `null`, если его нет/не сняли. */
+  description: z.string().nullable(),
+});
+
+export type ProductDetail = z.infer<typeof productDetailSchema>;
+
+/** Выходная схема `get_product`. Зеркалит обёртку выдачи: данные + происхождение/деградация. */
+export const getProductResultSchema = z.object({
+  /** Деталь товара; `null` только у фолбэка без закэшированного примера. */
+  product: productDetailSchema.nullable(),
+  source: z.enum(["hit", "miss", "fallback"]),
+  stale: z.boolean(),
+  fallback: z.boolean(),
+  fetchedAt: z.string().nullable(),
+});
+
+export type GetProductResult = z.infer<typeof getProductResultSchema>;

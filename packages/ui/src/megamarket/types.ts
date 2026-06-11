@@ -25,3 +25,25 @@ export interface SearchResult {
   fallback: boolean;
   fetchedAt: string | null;
 }
+
+/** Характеристика деталки: пара «название — значение». Зеркалит `productSpecSchema`. */
+export interface ProductSpec {
+  name: string;
+  value: string;
+}
+
+/** Детальная карточка товара. Зеркалит `productDetailSchema` (граница postMessage-моста). */
+export interface ProductDetail extends Product {
+  images: string[];
+  specs: ProductSpec[];
+  description: string | null;
+}
+
+/** Результат `get_product`. Зеркалит `getProductResultSchema`. */
+export interface GetProductResult {
+  product: ProductDetail | null;
+  source: "hit" | "miss" | "fallback";
+  stale: boolean;
+  fallback: boolean;
+  fetchedAt: string | null;
+}

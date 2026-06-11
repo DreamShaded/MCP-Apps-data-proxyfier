@@ -2,7 +2,15 @@ import type { SearchResult } from "./types";
 import { ProductCard } from "./product-card";
 
 /** Выдача поиска: шапка с запросом + грид карточек. Без горизонтального скролла. */
-export function SearchView({ result }: { result: SearchResult }) {
+export function SearchView({
+  result,
+  onOpenProduct,
+  loadingId,
+}: {
+  result: SearchResult;
+  onOpenProduct: (id: string, url: string | null) => void;
+  loadingId: string | null;
+}) {
   const { query, products, stale } = result;
   return (
     <section className="mm-search">
@@ -20,7 +28,15 @@ export function SearchView({ result }: { result: SearchResult }) {
       {products.length ? (
         <div className="mm-grid">
           {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <ProductCard
+              key={p.id}
+              product={p}
+              onOpen={() => onOpenProduct(p.id, p.url)}
+              loading={loadingId === p.id}
+              // Пока грузится любая деталка — гасим «Подробнее» у всех карточек,
+              // чтобы второй клик не запустил гонку параллельных get_product.
+              busy={loadingId !== null}
+            />
           ))}
         </div>
       ) : (

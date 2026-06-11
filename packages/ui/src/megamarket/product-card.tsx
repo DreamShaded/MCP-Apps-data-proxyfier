@@ -5,8 +5,24 @@ function formatPrice(value: number): string {
   return `${new Intl.NumberFormat("ru-RU").format(value)} ₽`;
 }
 
-/** Карточка товара выдачи: фото, скидка, название, цена, рейтинг. Компактная под чат-iframe. */
-export function ProductCard({ product }: { product: Product }) {
+/**
+ * Карточка товара выдачи: фото, скидка, название, цена, рейтинг, «Подробнее». Компактная
+ * под чат-iframe. «Подробнее» инициирует app-side `get_product(id)` через родителя —
+ * нового пузыря в чате нет, обновляется тот же App.
+ */
+export function ProductCard({
+  product,
+  onOpen,
+  loading,
+  busy,
+}: {
+  product: Product;
+  onOpen: () => void;
+  /** Грузится именно эта карточка — показываем «Загружаем…». */
+  loading: boolean;
+  /** Грузится какая-то деталка (возможно другая) — кнопка заблокирована против гонки. */
+  busy: boolean;
+}) {
   const { title, price, oldPrice, discountPercent, imageUrl, rating, reviewCount } = product;
   return (
     <article className="mm-card">
@@ -42,6 +58,10 @@ export function ProductCard({ product }: { product: Product }) {
         ) : (
           <div className="mm-card__rating mm-card__rating--empty">Нет оценок</div>
         )}
+
+        <button type="button" className="mm-card__more" onClick={onOpen} disabled={busy}>
+          {loading ? "Загружаем…" : "Подробнее"}
+        </button>
       </div>
     </article>
   );
