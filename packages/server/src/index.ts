@@ -1,6 +1,7 @@
 import { createServer } from "./server.js";
 import { loadUiHtml } from "./ui-resource.js";
 import { createBrowserSession } from "./browser/create-session.js";
+import { createCache } from "./cache/create-cache.js";
 import { StdioTransportProvider } from "./transport/stdio-transport-provider.js";
 import type { ServerTransportProvider } from "./transport/transport-provider.js";
 
@@ -15,7 +16,14 @@ import type { ServerTransportProvider } from "./transport/transport-provider.js"
  */
 async function main(provider: ServerTransportProvider = new StdioTransportProvider()): Promise<void> {
   const { driver, sessionChecker } = createBrowserSession();
-  const server = createServer(loadUiHtml(), sessionChecker);
+  const { reader } = createCache();
+  const server = createServer({
+    pingHtml: loadUiHtml("index"),
+    megamarketHtml: loadUiHtml("megamarket"),
+    sessionChecker,
+    driver,
+    reader,
+  });
 
   let closing = false;
   const shutdown = async () => {

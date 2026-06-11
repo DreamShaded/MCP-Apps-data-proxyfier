@@ -1,6 +1,6 @@
 # 04 — Megamarket: search_products → грид-вью рендерится
 
-Status: ready-for-agent
+Status: ready-for-human
 Type: HITL
 
 ## Parent
@@ -22,16 +22,42 @@ PRD: `.scratch/mcp-app-proxyfier/PRD.md`
 
 ## Acceptance criteria
 
-- [ ] UI визуально соответствует настоящему Megamarket (токены сняты с живого сайта), адаптирован под узкий чат-iframe
-
-- [ ] `search_products` возвращает структурированный список товаров (фото, название, цена, рейтинг)
-- [ ] Чтение идёт через кэш-слой (хит/мисс)
-- [ ] Произвольный запрос проходит вживую через Playwright под сессией
-- [ ] Таймаут/сбой → фолбэк-UI, без зависания
-- [ ] **HITL:** в Claude Desktop рендерится грид карточек товаров
-- [ ] Тест слоя инструмента через шов с фейковым/записанным Playwright-драйвером (вход — аргументы, выход — structuredContent)
+- [~] UI визуально соответствует настоящему Megamarket (токены сняты с живого сайта), адаптирован под узкий чат-iframe — _адаптация под узкий чат-iframe готова; токены подобраны по фирменному стилю (фиолетовый/градиент), но НЕ сняты с живого сайта — ждёт HITL-сверки + опц. live-capture (см. Comments)_
+- [x] `search_products` возвращает структурированный список товаров (фото, название, цена, рейтинг)
+- [x] Чтение идёт через кэш-слой (хит/мисс)
+- [x] Произвольный запрос проходит вживую через Playwright под сессией _(код готов; живой smoke — ручной, вне CI)_
+- [x] Таймаут/сбой → фолбэк-UI, без зависания
+- [ ] **HITL:** в Claude Desktop рендерится грид карточек товаров _(ждёт ручной проверки рендера)_
+- [x] Тест слоя инструмента через шов с фейковым/записанным Playwright-драйвером (вход — аргументы, выход — structuredContent)
 
 ## Blocked by
 
 - 02
 - 03
+
+## Comments
+
+### Реализация (агент, 2026-06-11)
+
+Код готов, сборка зелёная, тесты 53/53. Артефакты:
+
+- **Сервер** `packages/server/src/megamarket/`: `product.ts` (типы+zod), `scrape-search.ts`
+  (live-скрейп + чистая `normalizeProducts`), `megamarket-ui-resource.ts`
+  (`ui://mcp-app-proxyfier/megamarket.html`), `search-products-tool.ts`
+  (`registerSearchProductsTool({driver, reader})`). `createServer` переведён на объект-deps;
+  `loadUiHtml(name)` обобщён на `dist/<name>.html`.
+- **UI** `packages/ui/src/megamarket/`: мини-SPA (пока search-view), грид карточек,
+  фолбэк-вью, дизайн-токены. Сборка — отдельный проход Vite на приложение
+  (`UI_ENTRY=index|megamarket`), т.к. `vite-plugin-singlefile` несовместим с мульти-входом.
+- **Тесты**: `search-products-tool.test.ts` (чёрный ящик через InMemoryTransport: hit/miss/
+  fallback/filters/_meta.ui), `scrape-search.test.ts` (нормализация: цены/рейтинг/скидка/
+  фильтр/лимит/абс. URL). Code-review пройден (DONE_WITH_CONCERNS, минорки исправлены).
+
+**Остаётся человеку:**
+1. **HITL-рендер**: запустить `pnpm build`, подключить сервер в Claude Desktop по stdio,
+   спросить «найди беспроводные наушники до 5000 ₽» → убедиться, что грид рисуется в iframe
+   (де-риск бага рендера #671). Селекторы скрейпа в `scrape-search.ts` (`[data-test=...]`)
+   настроены вслепую — тюнить по живому DOM Megamarket.
+2. **Дизайн-токены (опц.)**: снять точные hex со скриншота megamarket.ru
+   (`agent-browser` + `ai-multimodal`) и поправить `design-tokens.ts` — одна точка, все вью
+   подхватят через CSS-переменные. Текущие значения — обоснованный бренд-плейсхолдер.

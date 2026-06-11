@@ -1,0 +1,189 @@
+/* Вёрстка приложения Megamarket. Значения цвета/радиусов — из CSS-переменных
+   --mm-*, которые инжектит design-tokens.ts (единый источник для всех вью).
+   Адаптация под узкий чат-iframe: компактный грид, без горизонтального скролла. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  background: var(--mm-page-bg, transparent);
+  font-family: var(--mm-font);
+  color: var(--mm-text);
+}
+
+.mm-root {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* --- Шапка выдачи --- */
+.mm-search__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mm-search__logo {
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--mm-gradient-from), var(--mm-gradient-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  white-space: nowrap;
+}
+
+.mm-search__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mm-search__query {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mm-search__count {
+  font-size: 12px;
+  color: var(--mm-text-muted);
+}
+
+/* --- Грид карточек --- */
+.mm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.mm-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--mm-card-bg);
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-card);
+  box-shadow: var(--mm-shadow-card);
+  overflow: hidden;
+}
+
+.mm-card__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--mm-brand-soft);
+}
+.mm-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.mm-card__img--empty {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mm-brand-soft),
+    var(--mm-brand-soft) 10px,
+    #fff 10px,
+    #fff 20px
+  );
+}
+.mm-card__discount {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 2px 6px;
+  border-radius: var(--mm-radius-chip);
+  background: var(--mm-discount-bg);
+  color: var(--mm-discount-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mm-card__body {
+  padding: 8px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mm-card__prices {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mm-card__price {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--mm-text);
+}
+.mm-card__old-price {
+  font-size: 12px;
+  color: var(--mm-old-price);
+  text-decoration: line-through;
+}
+
+.mm-card__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--mm-text);
+  /* Не больше двух строк — плотность под чат. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mm-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--mm-text-muted);
+}
+.mm-card__star {
+  color: var(--mm-rating);
+}
+.mm-card__rating-value {
+  font-weight: 600;
+  color: var(--mm-text);
+}
+.mm-card__rating--empty {
+  font-style: italic;
+}
+
+.mm-search__empty,
+.mm-placeholder__text,
+.mm-fallback__text {
+  font-size: 13px;
+  color: var(--mm-text-muted);
+  line-height: 1.4;
+}
+
+/* --- Заглушки / фолбэк --- */
+.mm-placeholder,
+.mm-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+}
+.mm-placeholder--error .mm-placeholder__text {
+  color: var(--mm-discount-bg);
+}
+.mm-fallback__icon {
+  font-size: 32px;
+}
+.mm-fallback__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}

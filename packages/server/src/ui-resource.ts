@@ -11,20 +11,20 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 export const PING_UI_RESOURCE_URI = "ui://mcp-app-proxyfier/ping.html";
 
 /**
- * Путь по умолчанию к собранному файлу UI (один самодостаточный `index.html`):
- * вычисляется относительно скомпилированного сервера (`packages/server/dist/`) →
- * `packages/ui/dist/index.html`. Переопределяется переменной `MCP_UI_HTML_PATH`
- * (тесты / нестандартная раскладка файлов).
+ * Путь к собранному self-contained HTML по имени входа Vite: `dist/<name>.html`.
+ * Каждое приложение (`index` — каркас-пинг, `megamarket` — флоу Megamarket) собирается
+ * мульти-страничным билдом в отдельный файл. Базовый каталог переопределяется
+ * `MCP_UI_DIST_DIR` (тесты / нестандартная раскладка).
  */
-function resolveUiHtmlPath(): string {
-  const override = process.env.MCP_UI_HTML_PATH;
-  if (override) return override;
+function resolveUiHtmlPath(name: string): string {
   const here = dirname(fileURLToPath(import.meta.url));
-  return resolve(here, "../../ui/dist/index.html");
+  const distDir = process.env.MCP_UI_DIST_DIR ?? resolve(here, "../../ui/dist");
+  return resolve(distDir, `${name}.html`);
 }
 
 /** Прочитать собранный файл UI на старте; при ошибке сразу падаем с понятным сообщением. */
-export function loadUiHtml(htmlPath: string = resolveUiHtmlPath()): string {
+export function loadUiHtml(name: string = "index"): string {
+  const htmlPath = resolveUiHtmlPath(name);
   try {
     return readFileSync(htmlPath, "utf-8");
   } catch (cause) {
@@ -38,22 +38,33 @@ export function loadUiHtml(htmlPath: string = resolveUiHtmlPath()): string {
 /**
  * Зарегистрировать `ui://`-ресурс с HTML, который хост запрашивает и
  * отрисовывает в своей песочнице-iframe. HTML читается один раз на старте и
- * отдаётся по запросу чтения.
+ * отдаётся по запросу чтения. Общий помощник для всех MCP-приложений репозитория.
  */
-export function registerPingUiResource(server: McpServer, html: string): void {
+export function registerAppHtmlResource(
+  server: McpServer,
+  name: string,
+  uri: string,
+  html: string,
+  description: string,
+): void {
   registerAppResource(
+    server,
+    name,
+    uri,
+    { description },
+    async () => ({
+      contents: [{ uri, mimeType: RESOURCE_MIME_TYPE, text: html }],
+    }),
+  );
+}
+
+/** UI-ресурс каркасного `ping`-приложения. */
+export function registerPingUiResource(server: McpServer, html: string): void {
+  registerAppHtmlResource(
     server,
     "Ping App",
     PING_UI_RESOURCE_URI,
-    { description: "Minimal MCP App rendered for the ping tool." },
-    async () => ({
-      contents: [
-        {
-          uri: PING_UI_RESOURCE_URI,
-          mimeType: RESOURCE_MIME_TYPE,
-          text: html,
-        },
-      ],
-    }),
+    html,
+    "Minimal MCP App rendered for the ping tool.",
   );
 }

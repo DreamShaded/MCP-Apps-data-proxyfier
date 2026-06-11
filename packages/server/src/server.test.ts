@@ -8,10 +8,22 @@ import { StdioTransportProvider } from "./transport/stdio-transport-provider.js"
 
 const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
 
+/** Фейк-драйвер браузера: тесты уровня каркаса не должны поднимать Chromium. */
+const fakeDriver = {
+  withPage: async <T>(fn: (page: never) => Promise<T>): Promise<T> => fn(undefined as never),
+  close: async () => {},
+};
+const fakeSessionChecker = { checkSession: async () => [] };
+
 /** Поднять сервер, связанный с in-memory клиентом, — тестовая граница на уровне инструментов MCP. */
 async function connectTestClient() {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const server = createServer(FAKE_HTML);
+  const server = createServer({
+    pingHtml: FAKE_HTML,
+    megamarketHtml: FAKE_HTML,
+    sessionChecker: fakeSessionChecker,
+    driver: fakeDriver,
+  });
   const client = new Client({ name: "test-client", version: "1.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   return { client, server };

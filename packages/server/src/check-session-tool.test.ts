@@ -8,10 +8,20 @@ import type { SiteSessionStatus } from "./browser/session-detectors.js";
 
 const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
 
+const fakeDriver = {
+  withPage: async <T>(fn: (page: never) => Promise<T>): Promise<T> => fn(undefined as never),
+  close: async () => {},
+};
+
 /** Поднять сервер с подменённой проверкой сессии — браузер не трогаем. */
 async function connectWith(checker: SessionChecker) {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const server = createServer(FAKE_HTML, checker);
+  const server = createServer({
+    pingHtml: FAKE_HTML,
+    megamarketHtml: FAKE_HTML,
+    sessionChecker: checker,
+    driver: fakeDriver,
+  });
   const client = new Client({ name: "test-client", version: "1.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   return { client, server };

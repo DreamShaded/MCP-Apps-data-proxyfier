@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build",
     "preview": "vite preview"
   },
   "dependencies": {
