@@ -8,6 +8,8 @@ import { registerGetProductTool } from "./megamarket/get-product-tool.js";
 import { registerAddToCartTool } from "./megamarket/add-to-cart-tool.js";
 import { registerViewCartTool } from "./megamarket/view-cart-tool.js";
 import { registerCheckoutTool } from "./megamarket/checkout-tool.js";
+import { registerDepositsUiResource } from "./deposits/deposits-ui-resource.js";
+import { registerSearchDepositsTool } from "./deposits/search-deposits-tool.js";
 import { createBrowserSession } from "./browser/create-session.js";
 import { createCache } from "./cache/create-cache.js";
 import type { BrowserDriver } from "./browser/browser-driver.js";
@@ -24,6 +26,8 @@ export interface ServerDeps {
   pingHtml?: string;
   /** HTML приложения Megamarket (мини-SPA выдачи). */
   megamarketHtml?: string;
+  /** HTML приложения «Вклады Сбера» (отдельный MCP App). */
+  depositsHtml?: string;
   sessionChecker?: SessionChecker;
   /** Шов браузера, общий для всех инструментов (одна сериализованная сессия). */
   driver?: BrowserDriver;
@@ -44,6 +48,7 @@ export function createServer(deps: ServerDeps = {}): McpServer {
   const reader = deps.reader ?? createCache().reader;
   const pingHtml = deps.pingHtml ?? loadUiHtml("index");
   const megamarketHtml = deps.megamarketHtml ?? loadUiHtml("megamarket");
+  const depositsHtml = deps.depositsHtml ?? loadUiHtml("deposits");
 
   const server = new McpServer({ name: "mcp-app-proxyfier", version: "1.0.0" });
 
@@ -60,6 +65,11 @@ export function createServer(deps: ServerDeps = {}): McpServer {
   registerViewCartTool(server, { driver });
   // Хэндоф «открыть в браузере»: выводит живое окно вперёд на заполненной корзине (без кэша).
   registerCheckoutTool(server, { driver });
+
+  // Вклады Сбера — отдельный MCP App (свой ui://, без корзины/оплаты). Чтение через
+  // тот же кэш-слой; пересчёт доходности по слайдерам — целиком на клиенте.
+  registerDepositsUiResource(server, depositsHtml);
+  registerSearchDepositsTool(server, { driver, reader });
 
   return server;
 }

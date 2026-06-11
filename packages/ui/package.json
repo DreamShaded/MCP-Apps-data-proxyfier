@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build",
+    "build": "tsc --noEmit && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build && UI_ENTRY=deposits vite build",
+    "test": "node --test --import tsx 'src/**/*.test.ts'",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-plugin-singlefile": "^2.3.3"

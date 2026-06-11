@@ -4,6 +4,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "./server.js";
 import { PING_UI_RESOURCE_URI } from "./ui-resource.js";
+import { DEPOSITS_UI_RESOURCE_URI } from "./deposits/deposits-ui-resource.js";
 import { StdioTransportProvider } from "./transport/stdio-transport-provider.js";
 
 const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
@@ -21,6 +22,7 @@ async function connectTestClient() {
   const server = createServer({
     pingHtml: FAKE_HTML,
     megamarketHtml: FAKE_HTML,
+    depositsHtml: FAKE_HTML,
     sessionChecker: fakeSessionChecker,
     driver: fakeDriver,
   });
@@ -62,6 +64,19 @@ test("ui:// resource serves the bundled HTML with the MCP-app mime type", async 
   assert.equal(entry.uri, PING_UI_RESOURCE_URI);
   assert.equal(entry.text, FAKE_HTML);
   assert.match(String(entry.mimeType), /text\/html;profile=mcp-app/);
+  await server.close();
+});
+
+test("createServer wires the deposits app: search_deposits tool + its ui:// resource", async () => {
+  const { client, server } = await connectTestClient();
+  const { tools } = await client.listTools();
+  const deposits = tools.find((t) => t.name === "search_deposits");
+  assert.ok(deposits, "search_deposits tool should be registered by createServer");
+  const ui = (deposits?._meta as { ui?: { resourceUri?: string } } | undefined)?.ui;
+  assert.equal(ui?.resourceUri, DEPOSITS_UI_RESOURCE_URI);
+
+  const { contents } = await client.readResource({ uri: DEPOSITS_UI_RESOURCE_URI });
+  assert.equal((contents[0] as { text?: string }).text, FAKE_HTML);
   await server.close();
 });
 

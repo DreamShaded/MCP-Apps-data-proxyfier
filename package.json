@@ -11,7 +11,7 @@
     "start": "pnpm --filter @mcp-app-proxyfier/server start",
     "bootstrap:login": "pnpm --filter @mcp-app-proxyfier/server bootstrap:login",
     "seed:cache": "pnpm --filter @mcp-app-proxyfier/server seed:cache",
-    "test": "pnpm --filter @mcp-app-proxyfier/server test"
+    "test": "pnpm --filter @mcp-app-proxyfier/server test && pnpm --filter @mcp-app-proxyfier/ui test"
   },
   "keywords": [],
   "author": "",

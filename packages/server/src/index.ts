@@ -20,6 +20,7 @@ async function main(provider: ServerTransportProvider = new StdioTransportProvid
   const server = createServer({
     pingHtml: loadUiHtml("index"),
     megamarketHtml: loadUiHtml("megamarket"),
+    depositsHtml: loadUiHtml("deposits"),
     sessionChecker,
     driver,
     reader,
