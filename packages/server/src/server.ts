@@ -7,6 +7,7 @@ import { registerSearchProductsTool } from "./megamarket/search-products-tool.js
 import { registerGetProductTool } from "./megamarket/get-product-tool.js";
 import { registerAddToCartTool } from "./megamarket/add-to-cart-tool.js";
 import { registerViewCartTool } from "./megamarket/view-cart-tool.js";
+import { registerCheckoutTool } from "./megamarket/checkout-tool.js";
 import { createBrowserSession } from "./browser/create-session.js";
 import { createCache } from "./cache/create-cache.js";
 import type { BrowserDriver } from "./browser/browser-driver.js";
@@ -57,6 +58,8 @@ export function createServer(deps: ServerDeps = {}): McpServer {
   // только через шов браузера (сериализованы его мьютексом).
   registerAddToCartTool(server, { driver });
   registerViewCartTool(server, { driver });
+  // Хэндоф «открыть в браузере»: выводит живое окно вперёд на заполненной корзине (без кэша).
+  registerCheckoutTool(server, { driver });
 
   return server;
 }

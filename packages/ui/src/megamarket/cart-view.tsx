@@ -11,9 +11,10 @@ function formatPrice(value: number): string {
  * чат-iframe — компактные строки, вертикальная компоновка, без горизонтального скролла.
  *
  * «Назад» — чисто клиентское переключение (родитель держит предыдущую вью в стейте),
- * поэтому обычный onClick без обращения к серверу.
+ * поэтому обычный onClick без обращения к серверу. «Перейти к оплате» — тоже клиентский
+ * переход на экран хэндофа (корзина уже в стейте), сам хэндоф в браузер делает та вью.
  */
-export function CartView({ cart, onBack }: { cart: Cart; onBack: () => void }) {
+export function CartView({ cart, onBack, onCheckout }: { cart: Cart; onBack: () => void; onCheckout: () => void }) {
   const { items, totalCount, totalPrice } = cart;
 
   return (
@@ -70,6 +71,10 @@ export function CartView({ cart, onBack }: { cart: Cart; onBack: () => void }) {
               {totalPrice !== null ? formatPrice(totalPrice) : "—"}
             </span>
           </footer>
+
+          <button type="button" className="mm-cta mm-cart__checkout" onClick={onCheckout}>
+            Перейти к оплате
+          </button>
         </>
       ) : (
         <p className="mm-search__empty">Корзина пуста. Добавьте товары из выдачи или карточки.</p>

@@ -80,3 +80,12 @@ export interface ViewCartResult {
   fallback: boolean;
   fetchedAt: string | null;
 }
+
+/** Результат `checkout` (хэндоф «открыть в браузере»). Зеркалит `checkoutResultSchema`. */
+export interface CheckoutResult {
+  /** Ссылка на реальную корзину/оформление Megamarket — отдаётся всегда, даже на сбое. */
+  url: string;
+  cart: Cart | null;
+  fallback: boolean;
+  fetchedAt: string | null;
+}

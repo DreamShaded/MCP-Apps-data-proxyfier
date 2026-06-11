@@ -56,3 +56,19 @@ export const viewCartResultSchema = z.object({
 });
 
 export type ViewCartResult = z.infer<typeof viewCartResultSchema>;
+
+/**
+ * Выходная схема `checkout` — данные хэндофа «открыть в браузере». `url` — ссылка на
+ * реальную корзину/оформление Megamarket; она константна, поэтому возвращается даже на
+ * сбое (живое окно всё равно можно открыть руками). `cart` — снимок для сводки на экране
+ * хэндофа (подтверждает, что корзина заполнена); на сбое чтения — `fallback:true`, `cart:null`.
+ * Платёжную страницу/3DS в iframe сознательно не встраиваем — оплата завершается в окне.
+ */
+export const checkoutResultSchema = z.object({
+  url: z.string(),
+  cart: cartSchema.nullable(),
+  fallback: z.boolean(),
+  fetchedAt: z.string().nullable(),
+});
+
+export type CheckoutResult = z.infer<typeof checkoutResultSchema>;
