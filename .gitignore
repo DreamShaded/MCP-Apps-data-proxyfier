@@ -6,6 +6,7 @@ dist/
 .session/*
 !.session/.gitkeep
 
-# Runtime cache of live reads. Golden fixtures are committed explicitly.
+# Runtime cache of live reads is ignored; golden fixtures live in golden/ and are committed.
 cache/data/*
 !cache/data/.gitkeep
+!cache/data/golden/
