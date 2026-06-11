@@ -1,0 +1,25 @@
+{
+  "name": "@mcp-app-proxyfier/server",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "mcp-app-proxyfier": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prestart": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "node --test --import tsx 'src/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.4",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

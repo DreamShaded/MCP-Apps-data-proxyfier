@@ -1,10 +1,15 @@
 {
   "name": "mcp-app-proxyfier",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Proxying MCP server that serves interactive MCP Apps for Sber services",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "pnpm --filter @mcp-app-proxyfier/ui build && pnpm --filter @mcp-app-proxyfier/server build",
+    "build:ui": "pnpm --filter @mcp-app-proxyfier/ui build",
+    "build:server": "pnpm --filter @mcp-app-proxyfier/server build",
+    "start": "pnpm --filter @mcp-app-proxyfier/server start",
+    "test": "pnpm --filter @mcp-app-proxyfier/server test"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +21,7 @@
       "onFail": "download"
     }
   },
-  "type": "module"
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
 }
