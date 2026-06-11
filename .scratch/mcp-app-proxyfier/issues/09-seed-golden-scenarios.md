@@ -1,6 +1,6 @@
 # 09 — Сидинг золотых сценариев
 
-Status: ready-for-agent
+Status: code-complete, HITL pending (живой прогон `pnpm seed:cache` под залогиненной сессией → коммит фикстур golden/)
 Type: AFK
 
 ## Parent
