@@ -79,6 +79,53 @@ If only text appears and no iframe renders, you have reproduced the host
 iframe-render bug (ext-apps #671) — capture the Claude Desktop version and keep
 the text fallback narrative for the demo.
 
+## Session bootstrap (one-time manual login)
+
+The server drives real Sber/Megamarket sites through a **headed Playwright
+browser** running on a persistent profile in `./.session/`. You log in **once,
+by hand**, and the server reuses that session — no SMS/captcha on camera.
+
+Install the browser binary once:
+
+```bash
+pnpm exec playwright install chromium
+# or, to use your installed Chrome (gentler on anti-bot):
+#   set MCP_BROWSER_CHANNEL=chrome and skip the download
+```
+
+Then run the bootstrap:
+
+```bash
+pnpm bootstrap:login
+```
+
+This opens a visible browser on the `./.session/` profile with Megamarket and
+Sber in tabs. Log in manually (phone + SMS, captcha), then **close the browser
+window** — cookies/localStorage stay in the profile. Restarting reuses the
+session.
+
+> **Profile lock — do not run the server and `bootstrap:login` at the same
+> time.** Chromium holds a singleton lock on the profile directory, so a second
+> launch on the same profile fails fast with a clear error. Close the bootstrap
+> browser before starting the server (and vice-versa).
+
+The profile is a **secret** (it holds an authenticated banking session). It is
+git-ignored (`.session/*` except `.gitkeep`) and must never be committed.
+
+Override the profile location with `MCP_SESSION_DIR` if needed.
+
+## `check_session` tool
+
+Before a demo, call the `check_session` tool to confirm the profile is still
+logged in. It probes Sber and Megamarket under the current profile and returns
+a structured status per site (`loggedIn: true | false | null`) plus an overall
+`ok`. It never hangs the demo: a locked profile, missing browser, or timeout
+degrades to `ok: false` with a reason instead of throwing.
+
+The login-detection selectors live in
+`packages/server/src/browser/session-detectors.ts` and are tuned against the
+live sites during bootstrap.
+
 ## Transport abstraction
 
 The server is transport-agnostic. Tools and resources are registered on the

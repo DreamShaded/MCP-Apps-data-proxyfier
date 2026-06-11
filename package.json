@@ -9,6 +9,7 @@
     "build:ui": "pnpm --filter @mcp-app-proxyfier/ui build",
     "build:server": "pnpm --filter @mcp-app-proxyfier/server build",
     "start": "pnpm --filter @mcp-app-proxyfier/server start",
+    "bootstrap:login": "pnpm --filter @mcp-app-proxyfier/server bootstrap:login",
     "test": "pnpm --filter @mcp-app-proxyfier/server test"
   },
   "keywords": [],
