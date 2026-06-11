@@ -1,56 +1,86 @@
 # MCP App Proxyfier
 
-A proxying MCP server that serves **interactive MCP Apps** (the official MCP UI
-extension) into Claude Desktop. This repository currently contains the **scaffold
-tracer bullet**: a stdio MCP server exposing one `ping` tool whose result renders
-a minimal React app inside the host's sandbox iframe.
+Проксирующий MCP-сервер, который через настоящий браузер (Playwright) работает с
+живыми сервисами Сбера и отдаёт в чат с моделью **интерактивные MCP Apps**
+(официальное UI-расширение MCP, рендерится в песочнице-iframe хоста). Вместо
+текстовой обёртки над запросами зритель получает нативный UI прямо в диалоге.
 
-The goal of this slice is to de-risk the host iframe-render path on a real Claude
-Desktop build before building the Sber/Megamarket flows.
+Реализованы два вылизанных флоу на настоящих данных:
 
-## Layout
+- **Вклады Сбера** — подбор вкладов только на чтение, с живыми слайдерами суммы и
+  срока и мгновенным пересчётом доходности целиком на клиенте.
+- **Megamarket** — поиск товаров → грид → детальная страница → корзина → передача
+  оформления оплаты в живое окно браузера.
+
+«Золотые» сценарии отдаются мгновенно из прогретого кэша; произвольный запрос
+идёт вживую через браузер. Каждый инструмент обёрнут таймаутом и запасным UI,
+чтобы демо не зависало в кадре.
+
+## Структура
 
 ```
 packages/
-  ui/      React + Vite app, built into a single self-contained dist/index.html
-  server/  MCP server (stdio), serves the UI as a ui:// resource + ping tool
+  ui/      React + Vite; собирается в самодостаточные HTML (по одному на приложение)
+  server/  MCP-сервер, отдаёт UI как ui:// ресурсы + инструменты
 ```
 
-## Prerequisites
+UI собирается в три самодостаточных HTML-бандла — `index` (каркасный `ping`),
+`megamarket` и `deposits`; все JS/CSS встроены, внешних ссылок нет (требование
+песочницы-iframe). Сервер на старте читает эти HTML и регистрирует как `ui://`
+ресурсы.
 
-- Node.js 22+ (24 recommended)
+## Инструменты
+
+| Инструмент | Назначение |
+|------------|------------|
+| `ping` | Каркасная проверка рендера iframe |
+| `check_session` | Проверка, что профиль браузера ещё залогинен |
+| `search_products` | Поиск товаров Megamarket (через кэш) |
+| `get_product` | Детальная страница товара (через кэш) |
+| `add_to_cart` | Живой клик «в корзину» под залогиненной сессией |
+| `view_cart` | Текущее состояние корзины |
+| `checkout` | Ссылка на заполненную корзину → открыть в браузере |
+| `search_deposits` | Линейка вкладов Сбера + полная сетка ставок (через кэш) |
+
+## Требования
+
+- Node.js 22+ (рекомендуется 24)
 - pnpm 11+
 
-## Build
+## Сборка
 
 ```bash
 pnpm install
-pnpm build          # builds the UI single-file bundle, then the server
+pnpm build          # сначала собирает HTML-бандлы UI, затем сервер
 ```
 
-`pnpm build` runs the UI build first (it produces `packages/ui/dist/index.html`
-with all JS/CSS inlined — no external sources, required for the sandbox iframe),
-then compiles the server, which reads that HTML at startup and registers it as a
-`ui://` resource.
+`pnpm build` сначала собирает UI (получаются самодостаточные HTML со встроенными
+JS/CSS — без внешних источников, как требует песочница-iframe), затем компилирует
+сервер, который на старте читает эти HTML и регистрирует как `ui://` ресурсы.
 
-## Test
+## Тесты
 
 ```bash
-pnpm test           # server tool-layer + transport-seam tests
+pnpm test           # слой инструментов сервера, кэш, шов транспорта, пересчёт доходности
 ```
 
-## Run / register in Claude Desktop
+Тесты проверяют внешнее поведение через швы: инструменты MCP как чёрные ящики
+(Playwright подменён фейком/записанными ответами), кэш-слой (хит/мисс/таймаут),
+чистая функция пересчёта доходности вкладов и выбор транспорта. Живой путь через
+браузер и рендер iframe проверяются вручную (см. ниже) — в CI их нет.
 
-The server speaks MCP over **stdio**: Claude Desktop launches it as a child
-process. After `pnpm build`, add it to your Claude Desktop config.
+## Запуск / регистрация в Claude Desktop
 
-Config file location:
+Сервер говорит по MCP через **stdio**: Claude Desktop запускает его как дочерний
+процесс. После `pnpm build` пропишите его в конфиг Claude Desktop.
+
+Расположение файла конфигурации:
 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-Add (replace the path with the absolute path to this repo):
+Добавьте (замените путь на абсолютный путь к этому репозиторию):
 
 ```json
 {
@@ -63,73 +93,160 @@ Add (replace the path with the absolute path to this repo):
 }
 ```
 
-Then fully quit and reopen Claude Desktop.
+Затем полностью закройте и заново откройте Claude Desktop.
 
-## HITL verification (the point of this slice)
+## Ручная проверка рендера (главный риск демо)
 
-In a Claude Desktop chat, ask the model to call the `ping` tool (e.g. *"call the
-ping tool with echo hello"*). Confirm **visually**:
+Главный риск — баг рендера iframe на хосте (ext-apps #671): клиент согласует
+UI-возможность и тянет ресурс, но не рисует iframe. Поэтому его проверяют глазами
+на боевой сборке.
 
-1. An **interactive iframe** is drawn in the chat (a card titled "MCP App
-   Proxyfier"), not just the text result.
-2. The card shows `message: pong`, `echo: hello`, and a timestamp — i.e. the
-   tool's `structuredContent` reached the UI over the bridge.
+В чате Claude Desktop попросите модель вызвать инструмент `ping` (например,
+*«вызови инструмент ping с echo hello»*). Убедитесь **визуально**:
 
-If only text appears and no iframe renders, you have reproduced the host
-iframe-render bug (ext-apps #671) — capture the Claude Desktop version and keep
-the text fallback narrative for the demo.
+1. В чате нарисован **интерактивный iframe** (карточка с заголовком «MCP App
+   Proxyfier»), а не только текстовый результат.
+2. Карточка показывает `message: pong`, `echo: hello` и таймстамп — то есть
+   `structuredContent` инструмента дошёл до UI через мост.
 
-## Session bootstrap (one-time manual login)
+Если виден только текст и iframe не рисуется — баг #671 воспроизведён: зафиксируйте
+версию Claude Desktop и держите наготове запасной текстовый сценарий для демо.
 
-The server drives real Sber/Megamarket sites through a **headed Playwright
-browser** running on a persistent profile in `./.session/`. You log in **once,
-by hand**, and the server reuses that session — no SMS/captcha on camera.
+## Подготовка сессии (разовый ручной вход)
 
-Install the browser binary once:
+Сервер работает с настоящими сайтами Сбера/Megamarket через **видимый
+(headed) Playwright-браузер** на постоянном профиле в `./.session/`. Вы логинитесь
+**один раз, руками**, и сервер переиспользует эту сессию — никаких SMS/капчи в
+кадре.
+
+Один раз установите бинарь браузера:
 
 ```bash
 pnpm exec playwright install chromium
-# or, to use your installed Chrome (gentler on anti-bot):
-#   set MCP_BROWSER_CHANNEL=chrome and skip the download
+# либо использовать установленный Chrome (мягче для антибота):
+#   задайте MCP_BROWSER_CHANNEL=chrome и пропустите скачивание
 ```
 
-Then run the bootstrap:
+Затем выполните вход:
 
 ```bash
 pnpm bootstrap:login
 ```
 
-This opens a visible browser on the `./.session/` profile with Megamarket and
-Sber in tabs. Log in manually (phone + SMS, captcha), then **close the browser
-window** — cookies/localStorage stay in the profile. Restarting reuses the
-session.
+Откроется видимый браузер на профиле `./.session/` с Megamarket и Сбером во
+вкладках. Залогиньтесь вручную (телефон + SMS, капча), затем **закройте окно
+браузера** — cookies/localStorage останутся в профиле. При перезапуске сессия
+переиспользуется.
 
-> **Profile lock — do not run the server and `bootstrap:login` at the same
-> time.** Chromium holds a singleton lock on the profile directory, so a second
-> launch on the same profile fails fast with a clear error. Close the bootstrap
-> browser before starting the server (and vice-versa).
+> **Замок профиля — не запускайте сервер и `bootstrap:login` одновременно.**
+> Chromium держит singleton-замок на каталоге профиля, поэтому второй запуск на
+> том же профиле быстро падает с понятной ошибкой. Закройте браузер входа перед
+> запуском сервера (и наоборот).
 
-The profile is a **secret** (it holds an authenticated banking session). It is
-git-ignored (`.session/*` except `.gitkeep`) and must never be committed.
+Профиль — **секрет** (в нём аутентифицированная банковская сессия). Он в
+.gitignore (`.session/*` кроме `.gitkeep`) и никогда не должен попадать в гит.
 
-Override the profile location with `MCP_SESSION_DIR` if needed.
+При необходимости переопределите расположение профиля через `MCP_SESSION_DIR`.
 
-## `check_session` tool
+## Прогрев кэша «золотых» сценариев
 
-Before a demo, call the `check_session` tool to confirm the profile is still
-logged in. It probes Sber and Megamarket under the current profile and returns
-a structured status per site (`loggedIn: true | false | null`) plus an overall
-`ok`. It never hangs the demo: a locked profile, missing browser, or timeout
-degrades to `ok: false` with a reason instead of throwing.
+Чтобы демо не зависело от сетевых задержек и антибота, золотые сценарии (наушники
+до 5000, вклад 500к) заранее прогреваются в кэш и коммитятся как фикстуры:
 
-The login-detection selectors live in
-`packages/server/src/browser/session-detectors.ts` and are tuned against the
-live sites during bootstrap.
+```bash
+pnpm seed:cache     # под залогиненной сессией: живой проход → запись golden/
+```
 
-## Transport abstraction
+Чтения (`search_products`, `get_product`, `search_deposits`) идут через кэш-слой:
+хит — мгновенно, мисс — живой Playwright с записью результата. Записи
+(`add_to_cart`) всегда живые.
 
-The server is transport-agnostic. Tools and resources are registered on the
-`McpServer` with no knowledge of the wire. The transport is chosen behind
-`ServerTransportProvider` (`packages/server/src/transport/`). Adding Streamable
-HTTP later (phase 2, remote connector) means writing one new provider — no tool
-or resource code changes.
+## Инструмент `check_session`
+
+Перед демо вызовите инструмент `check_session`, чтобы убедиться, что профиль ещё
+залогинен. Он пробует Сбер и Megamarket под текущим профилем и возвращает
+структурированный статус по каждому сайту (`loggedIn: true | false | null`) плюс
+общий `ok`. Демо он никогда не вешает: залоченный профиль, отсутствующий браузер
+или таймаут переходят в `ok: false` с причиной, а не выбрасывают исключение.
+
+Селекторы детекции логина лежат в
+`packages/server/src/browser/session-detectors.ts` и подгоняются под живые сайты
+во время входа.
+
+## Абстракция транспорта
+
+Сервер не зависит от транспорта. Инструменты и ресурсы регистрируются на
+`McpServer` без знания о канале. Транспорт выбирается за швом
+`ServerTransportProvider` (`packages/server/src/transport/`): `stdio` (фаза 1, по
+умолчанию) и `http` (Streamable HTTP, фаза 2 ниже). Оба провайдера регистрируют
+ровно те же инструменты и `ui://` ресурсы — добавление HTTP не потребовало правок
+кода инструментов или ресурсов.
+
+Транспорт выбирается флагом или переменной окружения (флаг приоритетнее):
+
+| Параметр | Флаг | Env | По умолчанию |
+|----------|------|-----|--------------|
+| Транспорт | `--transport stdio\|http` | `MCP_TRANSPORT` | `stdio` |
+| Интерфейс прослушивания | `--host` | `MCP_HTTP_HOST` | `127.0.0.1` |
+| Порт | `--port` | `MCP_HTTP_PORT` | `3000` |
+| Путь эндпоинта | `--path` | `MCP_HTTP_PATH` | `/mcp` |
+| Bearer-токен | `--token` | `MCP_HTTP_TOKEN` | _(выкл.)_ |
+
+## Удалённый коннектор (Streamable HTTP, фаза 2)
+
+Для демо, где владелец подключает коннектор сам (custom connector в claude.ai), а
+не Claude Desktop запускает его локально. **Это не блокирует stdio-демо фазы 1** —
+это альтернативный канал к тому же серверу.
+
+Сервер по-прежнему ведёт **видимый Playwright-браузер на этой машине** (нужен для
+передачи оплаты в живое окно), поэтому он слушает только на localhost и
+выставляется наружу через **туннель** — ноутбук остаётся хостом браузера.
+
+1. Соберите и запустите сервер по HTTP (слушает на `127.0.0.1:3000/mcp`). URL
+   туннеля — это неаутентифицированная ручка к вашему **залогиненному банковскому
+   браузеру**, поэтому задайте общий `MCP_HTTP_TOKEN` — запросы без
+   `Authorization: Bearer <token>` отклоняются с `401`:
+
+   ```bash
+   pnpm build
+   MCP_TRANSPORT=http MCP_HTTP_TOKEN="$(openssl rand -hex 16)" pnpm start
+   # токен выкл. (только локально, без туннеля): pnpm start -- --transport http
+   ```
+
+2. Откройте публичный HTTPS-туннель к этому локальному порту:
+
+   ```bash
+   cloudflared tunnel --url http://127.0.0.1:3000
+   #   → печатает https://<random>.trycloudflare.com
+   # альтернатива ngrok:
+   #   ngrok http 3000   → https://<random>.ngrok-free.app
+   ```
+
+   URL коннектора — это origin туннеля плюс путь эндпоинта, например
+   `https://<random>.trycloudflare.com/mcp`.
+
+3. В **claude.ai → Settings → Connectors → Add custom connector** вставьте этот
+   URL (и Bearer-токен в поле авторизации коннектора, если вы его задали). Claude
+   инициализирует сессию Streamable HTTP и показывает те же инструменты (`ping`,
+   `search_products`, `search_deposits`, …) и `ui://` приложения, что и stdio.
+
+> **Ручная проверка (рендер iframe на хосте, ext-apps #671).** Как и для stdio,
+> убедитесь **визуально**, что результат инструмента рисует **интерактивный
+> iframe** в чате claude.ai, а не только текст. Баг рендера #671 — клиентский и не
+> связан с транспортом, но его нужно перепроверить на claude.ai, потому что сборка
+> хоста отличается от Claude Desktop. Если виден только текст — это #671:
+> зафиксируйте сборку и держите наготове запасной текстовый сценарий.
+
+Замечания:
+- Один запущенный сервер обслуживает **одну сессию** — одного докладчика за
+  туннелем. Единственная сессия браузера сериализована тем же мьютексом
+  независимо от транспорта.
+- **Реконнект = перезапуск.** Единственная сессия не сбрасывается автоматически.
+  При чистом отключении claude.ai шлёт завершение сессии и повторное подключение
+  работает; но после *грязного* обрыва (туннель умер) свежий `initialize`
+  отклоняется, пока вы не перезапустите процесс сервера. Для короткого живого демо
+  просто `Ctrl-C` и заново `--transport http`, если коннектор потерял сессию.
+- Прослушивание остаётся на localhost намеренно; не слушайте `0.0.0.0` — доступ к
+  серверу только через туннель. Защита от DNS-rebinding намеренно выключена (host
+  туннеля динамический); доступ охраняет Bearer-токен `MCP_HTTP_TOKEN`.
+- После демо погасите туннель — URL является секретом.
