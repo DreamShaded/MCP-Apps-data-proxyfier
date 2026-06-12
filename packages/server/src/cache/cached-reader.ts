@@ -10,6 +10,13 @@ export const RUNTIME_TTL_MS = 60 * 60_000;
 export type ReadOutcome = "hit" | "miss" | "fallback";
 
 /**
+ * Режим чтения. `auto` — режим B по умолчанию (хит → мгновенно, мисс → вживую).
+ * `live` — обойти кэш и пойти вживую (доказать, что данные настоящие). `cache` —
+ * только кэш, в браузер не ходить (зал без сети / гарантированная скорость демо).
+ */
+export type ReadMode = "auto" | "live" | "cache";
+
+/**
  * Результат чтения через кэш. `source` позволяет инструменту решить, рисовать ли
  * фолбэк-UI; `data` равно `null` только у фолбэка без закэшированного примера.
  */
@@ -32,8 +39,15 @@ export class CacheTimeoutError extends Error {
 export interface CachedReaderOptions {
   timeoutMs?: number;
   runtimeTtlMs?: number;
+  /** Режим по умолчанию для всех чтений (per-call можно переопределить). */
+  mode?: ReadMode;
   /** Инъекция часов для детерминированных тестов TTL. */
   now?: () => number;
+}
+
+/** Опции одного чтения; `mode` переопределяет дефолт ридера на этот вызов. */
+export interface ReadOptions {
+  mode?: ReadMode;
 }
 
 /**
@@ -44,6 +58,7 @@ export interface CachedReaderOptions {
 export class CachedReader {
   private readonly timeoutMs: number;
   private readonly runtimeTtlMs: number;
+  private readonly defaultMode: ReadMode;
   private readonly now: () => number;
 
   constructor(
@@ -52,18 +67,34 @@ export class CachedReader {
   ) {
     this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.runtimeTtlMs = opts.runtimeTtlMs ?? RUNTIME_TTL_MS;
+    this.defaultMode = opts.mode ?? "auto";
     this.now = opts.now ?? Date.now;
   }
 
-  async read<T>(tool: string, args: unknown, source: () => Promise<T>): Promise<ReadResult<T>> {
+  async read<T>(
+    tool: string,
+    args: unknown,
+    source: () => Promise<T>,
+    opts: ReadOptions = {},
+  ): Promise<ReadResult<T>> {
+    const mode = opts.mode ?? this.defaultMode;
     const { id, canonical } = buildCacheKey(tool, args);
     const entry = (await this.store.get(id)) as CacheEntry<T> | null;
 
-    if (entry && !this.isExpired(entry)) {
+    // cache: только кэш, в живой источник не ходим (есть запись — отдаём, нет — фолбэк).
+    if (mode === "cache") {
+      if (entry) {
+        return { source: "hit", data: entry.data, stale: this.isExpired(entry), fetchedAt: entry.fetchedAt };
+      }
+      return { source: "fallback", data: null, stale: false, fetchedAt: null };
+    }
+
+    // auto: валидный хит отдаём сразу. live: пропускаем хит и идём вживую принудительно.
+    if (mode === "auto" && entry && !this.isExpired(entry)) {
       return { source: "hit", data: entry.data, stale: false, fetchedAt: entry.fetchedAt };
     }
 
-    // Мисс или истёкшая запись — идём в живой источник под таймаутом.
+    // live, или мисс/истёкшая запись в auto — идём в живой источник под таймаутом.
     try {
       const data = await this.race(source);
       const fetchedAt = new Date(this.now()).toISOString();

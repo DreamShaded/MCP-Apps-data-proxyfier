@@ -6,6 +6,7 @@ import { amountBounds, termBounds, clamp } from "./yield";
 import { DepositControls } from "./deposit-controls";
 import { DepositCard } from "./deposit-card";
 import { FallbackView } from "./fallback-view";
+import { SourceBadge } from "../source-badge";
 
 /**
  * Корневое приложение «Вклады Сбера» — отдельный MCP App (свой iframe, без корзины/
@@ -69,7 +70,7 @@ export function DepositsApp() {
       <>
         <header className="sb-head">
           <span className="sb-logo">СБЕР · Вклады</span>
-          {result.stale ? <span className="sb-head__stale">из кэша</span> : null}
+          <SourceBadge source={result.source} fetchedAt={result.fetchedAt} />
         </header>
         <DepositControls
           amount={amount}

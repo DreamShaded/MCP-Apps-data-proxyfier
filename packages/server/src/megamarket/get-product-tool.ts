@@ -50,13 +50,20 @@ export function registerGetProductTool(server: McpServer, deps: GetProductDeps):
           .string()
           .optional()
           .describe("Абсолютная ссылка карточки из выдачи — подсказка для живого перехода"),
+        fresh: z
+          .boolean()
+          .optional()
+          .describe("Обойти кэш и подгрузить карточку вживую через браузер (медленнее)."),
       },
       outputSchema: getProductResultSchema.shape,
       _meta: { ui: { resourceUri: MEGAMARKET_UI_RESOURCE_URI } },
     },
-    async ({ id, url }) => {
-      const result = await deps.reader.read<ProductDetail>("get_product", { id }, () =>
-        deps.driver.withPage((page) => scrape(page, id, url)),
+    async ({ id, url, fresh }) => {
+      const result = await deps.reader.read<ProductDetail>(
+        "get_product",
+        { id },
+        () => deps.driver.withPage((page) => scrape(page, id, url)),
+        { mode: fresh ? "live" : undefined },
       );
 
       const product = result.data;

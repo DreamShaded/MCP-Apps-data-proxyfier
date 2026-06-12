@@ -131,6 +131,92 @@ test("битая метка времени в рантайм-записи → с
   assert.equal(r.data, "fresh");
 });
 
+test("режим live: валидный хит игнорируется, идём вживую и перезаписываем", async () => {
+  const store = new MemStore();
+  const reader = new CachedReader(store, { now: () => 10_000 });
+  await reader.read("t", { q: "live" }, async () => "cached");
+  store.setCalls = 0;
+
+  let called = false;
+  const r = await reader.read(
+    "t",
+    { q: "live" },
+    async () => {
+      called = true;
+      return "fresh";
+    },
+    { mode: "live" },
+  );
+
+  assert.equal(r.source, "miss", "live всегда даёт живой результат, не хит");
+  assert.equal(r.data, "fresh");
+  assert.equal(called, true, "источник обязан вызываться в режиме live");
+  assert.equal(store.setCalls, 1, "живой результат перезаписывает кэш");
+});
+
+test("per-call режим переопределяет дефолт ридера (cache-ридер, live-вызов)", async () => {
+  const store = new MemStore();
+  const reader = new CachedReader(store, { mode: "cache" });
+
+  const r = await reader.read("t", { q: "ov" }, async () => "live", { mode: "live" });
+
+  assert.equal(r.source, "miss");
+  assert.equal(r.data, "live");
+});
+
+test("режим cache: при наличии записи источник не зовётся", async () => {
+  const store = new MemStore();
+  const reader = new CachedReader(store, { now: () => 10_000 });
+  await reader.read("t", { q: "c1" }, async () => "seeded");
+  store.setCalls = 0;
+
+  let called = false;
+  const r = await reader.read(
+    "t",
+    { q: "c1" },
+    async () => {
+      called = true;
+      return "should-not-run";
+    },
+    { mode: "cache" },
+  );
+
+  assert.equal(r.source, "hit");
+  assert.equal(r.data, "seeded");
+  assert.equal(called, false, "cache-режим не ходит в источник");
+  assert.equal(store.setCalls, 0);
+});
+
+test("режим cache: записи нет → фолбэк-маркер, источник не зовётся", async () => {
+  const store = new MemStore();
+  const reader = new CachedReader(store);
+
+  let called = false;
+  const r = await reader.read(
+    "t",
+    { q: "c2" },
+    async () => {
+      called = true;
+      return "x";
+    },
+    { mode: "cache" },
+  );
+
+  assert.equal(r.source, "fallback");
+  assert.equal(r.data, null);
+  assert.equal(called, false, "cache-режим не ходит в источник даже на миссе");
+});
+
+test("дефолтный режим ридера применяется без per-call (cache → фолбэк на миссе)", async () => {
+  const store = new MemStore();
+  const reader = new CachedReader(store, { mode: "cache" });
+
+  const r = await reader.read("t", { q: "c3" }, async () => "live");
+
+  assert.equal(r.source, "fallback", "дефолт cache не должен ходить вживую");
+  assert.equal(r.data, null);
+});
+
 test("золотая фикстура (ttlMs:null) не истекает и не зовёт источник", async () => {
   const store = new MemStore();
   const reader = new CachedReader(store, { now: () => 9_999_999_999_999 });

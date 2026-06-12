@@ -42,15 +42,22 @@ export function registerSearchDepositsTool(server: McpServer, deps: SearchDeposi
       inputSchema: {
         amount: z.number().positive().describe("Сумма вклада в рублях, например 500000"),
         termMonths: z.number().int().positive().describe("Срок вклада в месяцах, например 12"),
+        fresh: z
+          .boolean()
+          .optional()
+          .describe("Обойти кэш и запросить ставки вживую через браузер (медленнее)."),
       },
       // Единый источник схемы выдачи — `searchDepositsResultSchema` (без дубля формы здесь).
       outputSchema: searchDepositsResultSchema.shape,
       _meta: { ui: { resourceUri: DEPOSITS_UI_RESOURCE_URI } },
     },
-    async ({ amount, termMonths }) => {
+    async ({ amount, termMonths, fresh }) => {
       const args = { amount, termMonths };
-      const result = await deps.reader.read<Deposit[]>("search_deposits", args, () =>
-        deps.driver.withPage((page) => scrape(page, amount, termMonths)),
+      const result = await deps.reader.read<Deposit[]>(
+        "search_deposits",
+        args,
+        () => deps.driver.withPage((page) => scrape(page, amount, termMonths)),
+        { mode: fresh ? "live" : undefined },
       );
 
       const deposits = result.data ?? [];

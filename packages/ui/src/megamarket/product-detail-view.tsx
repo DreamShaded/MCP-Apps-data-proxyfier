@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ProductDetail } from "./types";
+import { SourceBadge, type ReadSource } from "../source-badge";
 
 /** «4990» → «4 990 ₽». Узкие неразрывные пробелы как на сайте Megamarket. */
 function formatPrice(value: number): string {
@@ -20,12 +21,17 @@ export function ProductDetailView({
   onBack,
   onAddToCart,
   adding,
+  source,
+  fetchedAt,
 }: {
   detail: ProductDetail;
   onBack: () => void;
   onAddToCart: () => void;
   /** Идёт живое добавление этой карточки в корзину — спиннер в CTA. */
   adding: boolean;
+  /** Источник деталки (как была получена) — для бейджа кэш/вживую. */
+  source?: ReadSource;
+  fetchedAt?: string | null;
 }) {
   const { title, price, oldPrice, discountPercent, rating, reviewCount, images, specs, description } = detail;
   const [active, setActive] = useState(0);
@@ -41,6 +47,7 @@ export function ProductDetailView({
           Назад
         </button>
         <span className="mm-search__logo">Megamarket</span>
+        {source ? <SourceBadge source={source} fetchedAt={fetchedAt ?? null} /> : null}
       </header>
 
       <div className="mm-detail__gallery">

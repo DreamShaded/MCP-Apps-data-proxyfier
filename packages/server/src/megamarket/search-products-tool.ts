@@ -44,15 +44,23 @@ export function registerSearchProductsTool(server: McpServer, deps: SearchProduc
       inputSchema: {
         query: z.string().min(1).describe("Поисковый запрос, например «беспроводные наушники»"),
         filters: searchFiltersSchema.optional(),
+        fresh: z
+          .boolean()
+          .optional()
+          .describe("Обойти кэш и запросить вживую через браузер (медленнее). Для самых свежих данных или чтобы показать живой запрос."),
       },
       // Единый источник схемы выдачи — `searchResultSchema` (без дубля формы здесь).
       outputSchema: searchResultSchema.shape,
       _meta: { ui: { resourceUri: MEGAMARKET_UI_RESOURCE_URI } },
     },
-    async ({ query, filters }) => {
+    async ({ query, filters, fresh }) => {
       const args = { query, filters: filters ?? {} };
-      const result = await deps.reader.read<Product[]>("search_products", args, () =>
-        deps.driver.withPage((page) => scrape(page, query, args.filters)),
+      // `fresh` ключ кэша не меняет — золотой и живой результат живут под одним ключом.
+      const result = await deps.reader.read<Product[]>(
+        "search_products",
+        args,
+        () => deps.driver.withPage((page) => scrape(page, query, args.filters)),
+        { mode: fresh ? "live" : undefined },
       );
 
       const products = result.data ?? [];

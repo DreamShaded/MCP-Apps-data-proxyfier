@@ -17,6 +17,10 @@ import { CartView } from "./cart-view";
 import { CheckoutView } from "./checkout-view";
 import { CartBadge } from "./cart-badge";
 import { FallbackView } from "./fallback-view";
+import type { ReadSource } from "../source-badge";
+
+/** Как и когда была получена показываемая деталка — для бейджа источника. */
+type DetailMeta = { source: ReadSource; fetchedAt: string | null };
 
 /** Какую вью мини-SPA показывает сейчас. Роутинг — чисто клиентский, в стейте app. */
 type View = "search" | "detail" | "cart" | "checkout";
@@ -37,6 +41,7 @@ export function MegamarketApp() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [view, setView] = useState<View>("search");
   const [detail, setDetail] = useState<ProductDetail | null>(null);
+  const [detailMeta, setDetailMeta] = useState<DetailMeta | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [cart, setCart] = useState<Cart | null>(null);
@@ -49,9 +54,11 @@ export function MegamarketApp() {
   const [checkoutFailed, setCheckoutFailed] = useState(false);
 
   const appRef = useRef<App | null>(null);
-  // Кэш деталок в стейте app: id → карточка. Переживает переходы «назад→подробнее»,
-  // не требует ре-рендера на запись, поэтому ref, а не state.
-  const detailCache = useRef<Map<string, ProductDetail>>(new Map());
+  // Кэш деталок в стейте app: id → карточка + её источник. Переживает переходы
+  // «назад→подробнее», не требует ре-рендера на запись, поэтому ref, а не state.
+  // Источник храним вместе с карточкой, чтобы повторный показ из app-кэша честно
+  // отражал, как и когда данные были получены (а не молча менял бейдж).
+  const detailCache = useRef<Map<string, { product: ProductDetail; meta: DetailMeta }>>(new Map());
   // Куда вернуться из корзины (на вью, с которой её открыли).
   const cartReturnView = useRef<View>("search");
 
@@ -89,7 +96,8 @@ export function MegamarketApp() {
       // Повторный заход — берём из кэша app, без обращения к серверу.
       const cached = detailCache.current.get(id);
       if (cached) {
-        setDetail(cached);
+        setDetail(cached.product);
+        setDetailMeta(cached.meta);
         setView("detail");
         return;
       }
@@ -105,10 +113,12 @@ export function MegamarketApp() {
         const res = await app.callServerTool({ name: "get_product", arguments: { id, ...(url ? { url } : {}) } });
         const data = res.structuredContent as unknown as GetProductResult | undefined;
         if (data?.product) {
+          const meta: DetailMeta = { source: data.source, fetchedAt: data.fetchedAt };
           // Кэшируем только успешно загруженную деталку. Фолбэк не пиним — повторное
           // «Подробнее» должно сходить заново и подхватить восстановившийся источник.
-          if (data.source !== "fallback") detailCache.current.set(id, data.product);
+          if (data.source !== "fallback") detailCache.current.set(id, { product: data.product, meta });
           setDetail(data.product);
+          setDetailMeta(meta);
           setView("detail");
         } else {
           setDetailError("Не удалось загрузить карточку товара.");
@@ -239,7 +249,7 @@ export function MegamarketApp() {
             {notice}
           </div>
         ) : null}
-        {renderBody({ result, view, detail, cart, loadingId, addingId, cartLoading, checkoutOpening, checkoutOpened, checkoutFailed, detailError, isConnected, error, openProduct, addToCart, openCart, goBack, backFromCart, goCheckout, openBrowser, backFromCheckout })}
+        {renderBody({ result, view, detail, detailMeta, cart, loadingId, addingId, cartLoading, checkoutOpening, checkoutOpened, checkoutFailed, detailError, isConnected, error, openProduct, addToCart, openCart, goBack, backFromCart, goCheckout, openBrowser, backFromCheckout })}
       </main>
     </>
   );
@@ -249,6 +259,7 @@ interface BodyProps {
   result: SearchResult | null;
   view: View;
   detail: ProductDetail | null;
+  detailMeta: DetailMeta | null;
   cart: Cart | null;
   loadingId: string | null;
   addingId: string | null;
@@ -290,7 +301,7 @@ function renderBody(p: BodyProps) {
     return <Placeholder text="Корзина пуста." onBack={p.backFromCart} />;
   }
   if (p.view === "detail" && p.detail)
-    return <ProductDetailView detail={p.detail} onBack={p.goBack} onAddToCart={() => p.addToCart(p.detail!.id, p.detail!.url)} adding={p.addingId === p.detail.id} />;
+    return <ProductDetailView detail={p.detail} onBack={p.goBack} onAddToCart={() => p.addToCart(p.detail!.id, p.detail!.url)} adding={p.addingId === p.detail.id} source={p.detailMeta?.source} fetchedAt={p.detailMeta?.fetchedAt} />;
   if (p.detailError) return <Placeholder text={p.detailError} tone="error" onBack={p.goBack} />;
   if (p.loadingId) return <Placeholder text="Загружаем карточку товара…" />;
   if (p.result?.fallback) return <FallbackView query={p.result.query} />;
