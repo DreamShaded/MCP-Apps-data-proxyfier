@@ -1,7 +1,7 @@
 import type { BrowserContext, Page } from "playwright";
 import type { BrowserDriver } from "./browser-driver.js";
 import { Mutex } from "./mutex.js";
-import { launchSessionContext } from "./launch-session-context.js";
+import { launchSessionContext, closeSessionContext } from "./launch-session-context.js";
 
 /** Фабрика контекста — точка подмены в тестах (без реального браузера). */
 export type SessionContextFactory = () => Promise<BrowserContext>;
@@ -17,10 +17,17 @@ export class PlaywrightBrowserDriver implements BrowserDriver {
   private context?: BrowserContext;
   private page?: Page;
 
-  constructor(private readonly launch: SessionContextFactory = launchSessionContext) {}
+  constructor(
+    private readonly launch: SessionContextFactory = launchSessionContext,
+    /** Пейсинг живых навигаций (анти-всплеск). По умолчанию — без задержки (тесты);
+     *  боевой пейсер инъектируется в `createBrowserSession`. */
+    private readonly pace: () => Promise<void> = async () => {},
+  ) {}
 
   withPage<T>(fn: (page: Page) => Promise<T>): Promise<T> {
     return this.mutex.runExclusive(async () => {
+      // Разносим живые обращения во времени, чтобы не выглядеть бот-всплеском.
+      await this.pace();
       const page = await this.ensurePage();
       return fn(page);
     });
@@ -30,7 +37,9 @@ export class PlaywrightBrowserDriver implements BrowserDriver {
     const context = this.context;
     this.context = undefined;
     this.page = undefined;
-    if (context) await context.close();
+    // CDP-attach (чужой Chrome) → отсоединиться, не закрывать чужое окно;
+    // свой профиль → закрыть. Решение инкапсулировано в closeSessionContext.
+    if (context) await closeSessionContext(context);
   }
 
   /** Лениво поднять контекст и переиспользовать единственную страницу. */

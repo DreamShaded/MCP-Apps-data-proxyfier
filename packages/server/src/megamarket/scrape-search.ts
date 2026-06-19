@@ -1,5 +1,6 @@
 import type { Page } from "playwright";
 import type { Product, SearchFilters } from "./product.js";
+import { actHuman } from "../browser/humanize.js";
 
 /** Лимит видимых позиций: узкий чат-iframe не тянет тяжёлый грид. */
 export const SEARCH_RESULT_LIMIT = 12;
@@ -37,11 +38,19 @@ export async function scrapeSearch(
   filters: SearchFilters = {},
 ): Promise<Product[]> {
   const url = `${MEGAMARKET_ORIGIN}/catalog/?q=${encodeURIComponent(query)}`;
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 7_000 });
+  // `commit` резолвит навигацию сразу (первый ответ, до парсинга/302-цепочки SEO-
+  // редиректа `/catalog/?q=` → `/catalog/<категория>/`). Это отдаёт почти весь
+  // бюджет кэш-слоя (~8с) ожиданию грида ниже, а не навигации — иначе медленный
+  // рендер успел бы упереться в общий таймаут и выдать пустой фолбэк.
+  await page.goto(url, { waitUntil: "commit", timeout: 7_000 });
 
-  // Карточка товара. Селектор HITL-настраивается на живом сайте.
-  const CARD = '[data-test="catalog-item"]';
-  await page.waitForSelector(CARD, { timeout: 5_000 }).catch(() => {});
+  // Карточка товара. Селекторы сверены с живым DOM Megamarket (data-test-атрибуты
+  // грида): карточка — `product-item`, имя/цена/рейтинг — см. ниже. Грид рисуется
+  // SPA уже после навигации (~3–6с), поэтому ждём именно карточку, не load-событие.
+  const CARD = '[data-test="product-item"]';
+  await page.waitForSelector(CARD, { timeout: 7_000 }).catch(() => {});
+  // Человеческая пауза + прокрутка: имитация пользователя и подгрузка ленивых карточек.
+  await actHuman(page);
 
   const raw = await page.$$eval(CARD, (cards) => {
     // Внутри браузера; структурные типы вместо DOM-lib (её нет в tsconfig сервера).
@@ -49,17 +58,19 @@ export async function scrapeSearch(
     const attr = (el: { getAttribute(n: string): string | null } | null, name: string) =>
       el?.getAttribute(name) ?? null;
     return cards.map((card): Record<string, string | null> => {
-      const link = card.querySelector("a[href]");
+      // Имя-ссылка несёт каноническую ссылку на товар; запасной — любой `a[href]`.
+      const link =
+        card.querySelector('a[data-test="product-name-link"]') ?? card.querySelector("a[href]");
       const img = card.querySelector("img");
       return {
-        id: attr(card, "data-item-id") ?? attr(link, "href"),
-        title: text(card.querySelector('[data-test="product-title"], [itemprop="name"]')),
-        priceText: text(card.querySelector('[data-test="product-price"], [itemprop="price"]')),
+        id: attr(card, "data-product-id") ?? attr(card, "id") ?? attr(link, "href"),
+        title: text(card.querySelector('[data-test="product-name"], [data-test="product-name-link"]')),
+        priceText: text(card.querySelector('[data-test="product-price"]')),
         oldPriceText: text(card.querySelector('[data-test="product-old-price"]')),
         discountText: text(card.querySelector('[data-test="product-discount"]')),
         imageUrl: attr(img, "src") ?? attr(img, "data-src"),
-        ratingText: text(card.querySelector('[data-test="rating"], [data-test="product-rating"]')),
-        reviewText: text(card.querySelector('[data-test="reviews-count"], [data-test="product-rating-reviews"]')),
+        ratingText: text(card.querySelector('[data-test="rating-stars-value"], [data-test="rating-stars-block"]')),
+        reviewText: text(card.querySelector('[data-test="reviews-count"]')),
         url: attr(link, "href"),
       };
     });

@@ -119,12 +119,37 @@ UI-возможность и тянет ресурс, но не рисует ifr
 **один раз, руками**, и сервер переиспользует эту сессию — никаких SMS/капчи в
 кадре.
 
-Один раз установите бинарь браузера:
+По умолчанию поднимается **настоящий системный Chrome** (`channel: chrome`) —
+у него валидные UA/Client-Hints и кодеки, поэтому антибот видит обычный браузер,
+а не bundled-Chromium. Если Chrome установлен, скачивать ничего не нужно.
+
+Поверх этого сервер снимает маркеры автоматизации (`--enable-automation`,
+`AutomationControlled`), фиксирует локаль/таймзону под RU и применяет «умный»
+stealth-патч JS-фингерпринта: подлинные значения настоящего Chrome (plugins,
+WebGL-GPU, permissions, нативный `navigator.webdriver = false`) не трогаются, фейки
+включаются только на bundled-Chromium (см.
+`packages/server/src/browser/stealth-init-script.ts`).
+
+**Главный анти-детект — патченый Playwright.** Зависимость `playwright`
+заалиасена на **`rebrowser-playwright`** (см. `packages/server/package.json`): он
+убирает утечку CDP `Runtime.enable` — основной сигнал, по которому антиботы
+класса Variti/DataDome палят автоматизацию даже на настоящем Chrome (у человека
+этой утечки нет). Режим фикса — `REBROWSER_PATCHES_RUNTIME_FIX_MODE=addBinding`
+(ставится по умолчанию в коде). Проверено на нейтральном детекторе
+`bot-detector.rebrowser.net`: `runtimeEnableLeak` и `navigatorWebdriver` — чисто.
+
+Дополнительно живые навигации «очеловечены» (см.
+`packages/server/src/browser/humanize.ts`): случайный интервал между заходами
+(анти-всплеск) + пауза/прокрутка после перехода. Тюнится через
+`MCP_HUMANIZE_MIN_MS` / `MCP_HUMANIZE_MAX_MS`.
+
+Если Chrome нет — нужен bundled-Chromium:
 
 ```bash
 pnpm exec playwright install chromium
-# либо использовать установленный Chrome (мягче для антибота):
-#   задайте MCP_BROWSER_CHANNEL=chrome и пропустите скачивание
+# принудительно использовать bundled при установленном Chrome:
+#   задайте MCP_BROWSER_CHANNEL=chromium
+# другой канал (Edge / бета): MCP_BROWSER_CHANNEL=msedge | chrome-beta | ...
 ```
 
 Затем выполните вход:
@@ -147,6 +172,45 @@ pnpm bootstrap:login
 .gitignore (`.session/*` кроме `.gitkeep`) и никогда не должен попадать в гит.
 
 При необходимости переопределите расположение профиля через `MCP_SESSION_DIR`.
+
+## Обход агрессивного антибота (Megamarket / Variti) — режим CDP-attach
+
+Некоторые сайты (СберМегаМаркет, антибот Variti) режут **холодный** профиль
+жёстким `403` ещё до логина: их challenge детектит автоматизацию и не отдаёт
+clearance-cookie. При этом ваш **обычный** Chrome открывает сайт нормально —
+у него этот cookie уже есть. На Chrome 149 cookie зашифрованы App-Bound и
+**не переносятся** копированием профиля. Решение — не поднимать свой профиль, а
+**подключиться по CDP к настоящему Chrome**, прогретому вручную.
+
+`MCP_CDP_ENDPOINT` переключает слой браузера в режим attach: вместо
+`launchPersistentContext` сервер делает `connectOverCDP` и переиспользует живой
+контекст. Подготовка (выделенный профиль — Chrome 136+ запрещает
+remote-debugging на дефолтном профиле и заодно так банковский профиль не светится
+в локальный CDP):
+
+```powershell
+# 1. Выделенный профиль (НЕ дефолтный). Прогрейте его РУКАМИ — как человек,
+#    без автоматизации, поэтому Variti отдаёт clearance-cookie:
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir="C:\chrome-mcp-profile"
+#    → откройте megamarket.ru, при необходимости залогиньтесь, закройте окно.
+
+# 2. Тот же профиль с портом отладки (порт открыт только на localhost):
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+    --user-data-dir="C:\chrome-mcp-profile" --remote-debugging-port=9222
+```
+
+```bash
+# 3. Указать сервер/bootstrap на этот Chrome — дальше всё как обычно:
+MCP_CDP_ENDPOINT=http://127.0.0.1:9222 pnpm start
+#   bootstrap:login в этом режиме не нужен — профиль уже прогрет вручную.
+```
+
+Заметки:
+- Порт отладки даёт локальный полный доступ к этому Chrome — держите в нём только
+  нужные вкладки и не открывайте там банковский профиль.
+- Сервер при остановке только **отсоединяется**, чужой Chrome не закрывает.
+- Профиль `./.session` и `bootstrap:login` остаются дефолтным путём для Сбера;
+  CDP-attach — отдельный канал для сайтов с жёстким антиботом.
 
 ## Прогрев кэша «золотых» сценариев
 
