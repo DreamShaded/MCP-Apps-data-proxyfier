@@ -171,6 +171,10 @@ function launchOptions(channel: string | undefined) {
     viewport: { width: 1280, height: 900 },
     locale: "ru-RU",
     timezoneId: "Europe/Moscow",
+    // ВКЛючаем песочницу Chromium. Playwright по умолчанию (chromiumSandbox:false)
+    // запускает Chrome с `--no-sandbox` — это явный маркер автоматизации, которого
+    // нет у настоящего Chrome пользователя; антибот (Variti) банит по нему сразу.
+    chromiumSandbox: true,
     // Убрать switch автоматизации (инфобар + CDP-флаг).
     ignoreDefaultArgs: ["--enable-automation"],
     args: [
