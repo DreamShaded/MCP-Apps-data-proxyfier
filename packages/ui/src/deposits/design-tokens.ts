@@ -1,38 +1,34 @@
 /**
- * Дизайн-токены «Вклады Сбера» — СВОЯ дизайн-система, не общая с Megamarket.
- * Бренд Сбера: фирменный зелёный, мягкие скругления, спокойный «банковский» контраст;
- * рейтинг/выгода без кричащих плашек.
+ * Дизайн-токены «Вклады Сбера» — СВОЯ дизайн-система, не общая с Megamarket. Значения
+ * извлечены из реального CSS `sberbank.ru` (`pages/bank/*_files/uiKitt.css`), не подобраны
+ * на глаз.
  *
- * ВНИМАНИЕ (HITL): значения подобраны по фирменному стилю Сбера, но финальная
- * визуальная сверка — ручная, на боевой сборке Claude Desktop. Точные hex берутся со
- * скриншота живого sberbank.ru (Playwright-сессия + ai-multimodal); правятся здесь —
- * одна точка, все вью подхватывают через CSS-переменные `--sb-*`.
+ * `brand` — общеизвестный фирменный зелёный `#21A038`: в реальном CSS встречается точечно
+ * (`.dk-sbol-button_type_primary-white{background:#21A038}` — «первичная белая» кнопка),
+ * но именно он взят как акцент CTA. `brandDark` — соседний «рабочий» зелёный кита
+ * (`#148F2B`/`#0D8523`), которым в реальной вёрстке закрашено большинство decorative-элементов.
  */
 export const depositsTokens = {
   color: {
-    /** Фирменный зелёный Сбера — основные акценты, ставка, активные элементы. */
     brand: "#21A038",
-    brandDark: "#178a2c",
+    brandDark: "#148F2B",
     brandSoft: "#E8F6EC",
-    /** Градиент бренда (логотип/шапка): зелёный → фирменный бирюзовый. */
-    gradientFrom: "#21A038",
-    gradientTo: "#00B2A9",
-    /** Жёлтый Сбера — тонкий акцент (значок капитализации/выгоды). */
-    accent: "#FAE000",
-    text: "#1F1F22",
-    textMuted: "#8B8B95",
+    text: "#262626",
+    textMuted: "#878B90",
     cardBg: "#FFFFFF",
     pageBg: "transparent",
-    border: "#E8E8EE",
+    border: "#CED1D5",
     /** Заливка трека слайдера до ползунка. */
     trackFill: "#21A038",
-    trackBg: "#E3E8E5",
+    trackBg: "#CED1D5",
   },
   radius: { card: "18px", control: "12px", chip: "8px" },
-  shadow: { card: "0 2px 14px rgba(0, 60, 20, 0.08)" },
+  shadow: { card: "0 2px 14px rgba(38, 38, 38, 0.08)" },
   font: {
-    // Системный стек без CDN (требование песочницы-iframe), близкий к SB Sans.
-    family: '"Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif',
+    // Реальный стек Сбера (SBSans* — кастомные веб-шрифты, файлов которых нет в
+    // снапшотах) — системный fallback-хвост подхватывает рендер без загрузки шрифта.
+    family: 'SBSansInterface, OpenSans, "Helvetica Neue", Helvetica, Arial, sans-serif',
+    heading: 'SBSansDisplay, OpenSans, "Helvetica Neue", Helvetica, Arial, sans-serif',
   },
 } as const;
 
@@ -48,9 +44,6 @@ export function tokensToCssVars(t: DepositsTokens = depositsTokens): string {
     `--sb-brand:${t.color.brand}`,
     `--sb-brand-dark:${t.color.brandDark}`,
     `--sb-brand-soft:${t.color.brandSoft}`,
-    `--sb-gradient-from:${t.color.gradientFrom}`,
-    `--sb-gradient-to:${t.color.gradientTo}`,
-    `--sb-accent:${t.color.accent}`,
     `--sb-text:${t.color.text}`,
     `--sb-text-muted:${t.color.textMuted}`,
     `--sb-card-bg:${t.color.cardBg}`,
@@ -63,6 +56,7 @@ export function tokensToCssVars(t: DepositsTokens = depositsTokens): string {
     `--sb-radius-chip:${t.radius.chip}`,
     `--sb-shadow-card:${t.shadow.card}`,
     `--sb-font:${t.font.family}`,
+    `--sb-font-heading:${t.font.heading}`,
   ];
   return `:root{${vars.join(";")}}`;
 }

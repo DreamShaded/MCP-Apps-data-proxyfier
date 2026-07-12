@@ -17,23 +17,20 @@ import { CartView } from "./cart-view";
 import { CheckoutView } from "./checkout-view";
 import { CartBadge } from "./cart-badge";
 import { FallbackView } from "./fallback-view";
-import type { ReadSource } from "../source-badge";
-
-/** Как и когда была получена показываемая деталка — для бейджа источника. */
-type DetailMeta = { source: ReadSource; fetchedAt: string | null };
 
 /** Какую вью мини-SPA показывает сейчас. Роутинг — чисто клиентский, в стейте app. */
 type View = "search" | "detail" | "cart" | "checkout";
 
 /**
- * Корневое приложение Megamarket (мини-SPA: выдача ⇄ деталка ⇄ корзина). Один iframe,
- * клиентский роутинг между вьюхами без новых пузырей в чате.
+ * Корневое приложение Megamarket (мини-SPA: выдача ⇄ деталка ⇄ корзина ⇄ подтверждение
+ * заказа). Один iframe, клиентский роутинг между вьюхами без новых пузырей в чате.
  *
- * Корзина = реальный сайт: «В корзину» (из грида и деталки) — app-initiated
- * `add_to_cart(id)`, живой клик под сессией; ответ несёт актуальную корзину, поэтому бейдж
- * обновляется без отдельного запроса, а вью остаётся на месте (грид/деталка). Клик по
- * бейджу — app-initiated `view_cart`, переключение на вью корзины. «Назад» из всех вьюх —
- * чисто клиентское. Деталки кэшируются в стейте app; корзина — нет (изменчива), читается живьём.
+ * Данные статические (каталог из `pages/`, см. план миграции) — нет кэш-слоя/браузера,
+ * поэтому у ответов инструментов нет `source`/`stale`/`fallback`. Корзина — in-memory на
+ * сервере (см. `data-source/cart-store.ts`): «В корзину» — app-initiated `add_to_cart(id)`,
+ * ответ несёт актуальную корзину, поэтому бейдж обновляется без отдельного запроса.
+ * «Оформить» показывает статический экран подтверждения (дизайн-референс —
+ * `pages/market/checkout/`), без хэндофа в реальный браузер.
  *
  * Авто-ресайз iframe включён по умолчанию в `useApp` — отдельный хук не нужен.
  */
@@ -41,24 +38,19 @@ export function MegamarketApp() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [view, setView] = useState<View>("search");
   const [detail, setDetail] = useState<ProductDetail | null>(null);
-  const [detailMeta, setDetailMeta] = useState<DetailMeta | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [cart, setCart] = useState<Cart | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [cartLoading, setCartLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  // Хэндоф «открыть в браузере»: идёт ли вызов checkout, выводилось ли окно, и был ли сбой.
-  const [checkoutOpening, setCheckoutOpening] = useState(false);
-  const [checkoutOpened, setCheckoutOpened] = useState(false);
-  const [checkoutFailed, setCheckoutFailed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState<CheckoutResult | null>(null);
 
   const appRef = useRef<App | null>(null);
-  // Кэш деталок в стейте app: id → карточка + её источник. Переживает переходы
-  // «назад→подробнее», не требует ре-рендера на запись, поэтому ref, а не state.
-  // Источник храним вместе с карточкой, чтобы повторный показ из app-кэша честно
-  // отражал, как и когда данные были получены (а не молча менял бейдж).
-  const detailCache = useRef<Map<string, { product: ProductDetail; meta: DetailMeta }>>(new Map());
+  // Кэш деталок в стейте app: id → карточка. Переживает переходы «назад→подробнее»,
+  // не требует ре-рендера на запись, поэтому ref, а не state.
+  const detailCache = useRef<Map<string, ProductDetail>>(new Map());
   // Куда вернуться из корзины (на вью, с которой её открыли).
   const cartReturnView = useRef<View>("search");
 
@@ -71,7 +63,7 @@ export function MegamarketApp() {
         const sc = params.structuredContent as Record<string, unknown> | undefined;
         // Host-инициированные view_cart/add_to_cart несут `cart` — показываем корзину.
         if (sc && "cart" in sc) {
-          setCart((sc.cart as Cart | null) ?? null);
+          setCart((sc.cart as Cart) ?? null);
           setView("cart");
           setNotice(null);
           return;
@@ -86,18 +78,17 @@ export function MegamarketApp() {
   });
 
   // Любая операция уже в полёте — блокируем новые, чтобы не плодить параллельные вызовы.
-  const busy = loadingId !== null || addingId !== null || cartLoading || checkoutOpening;
+  const busy = loadingId !== null || addingId !== null || cartLoading || confirming;
 
   const openProduct = useCallback(
-    async (id: string, url: string | null) => {
+    async (id: string) => {
       if (busy) return;
       setDetailError(null);
 
       // Повторный заход — берём из кэша app, без обращения к серверу.
       const cached = detailCache.current.get(id);
       if (cached) {
-        setDetail(cached.product);
-        setDetailMeta(cached.meta);
+        setDetail(cached);
         setView("detail");
         return;
       }
@@ -110,18 +101,14 @@ export function MegamarketApp() {
 
       setLoadingId(id);
       try {
-        const res = await app.callServerTool({ name: "get_product", arguments: { id, ...(url ? { url } : {}) } });
+        const res = await app.callServerTool({ name: "get_product", arguments: { id } });
         const data = res.structuredContent as unknown as GetProductResult | undefined;
         if (data?.product) {
-          const meta: DetailMeta = { source: data.source, fetchedAt: data.fetchedAt };
-          // Кэшируем только успешно загруженную деталку. Фолбэк не пиним — повторное
-          // «Подробнее» должно сходить заново и подхватить восстановившийся источник.
-          if (data.source !== "fallback") detailCache.current.set(id, { product: data.product, meta });
+          detailCache.current.set(id, data.product);
           setDetail(data.product);
-          setDetailMeta(meta);
           setView("detail");
         } else {
-          setDetailError("Не удалось загрузить карточку товара.");
+          setDetailError("Товар не найден в каталоге.");
         }
       } catch {
         setDetailError("Не удалось загрузить карточку товара.");
@@ -133,7 +120,7 @@ export function MegamarketApp() {
   );
 
   const addToCart = useCallback(
-    async (id: string, url: string | null) => {
+    async (id: string) => {
       if (busy) return;
       const app = appRef.current;
       if (!app) {
@@ -144,11 +131,11 @@ export function MegamarketApp() {
       setNotice(null);
       setAddingId(id);
       try {
-        const res = await app.callServerTool({ name: "add_to_cart", arguments: { id, ...(url ? { url } : {}) } });
+        const res = await app.callServerTool({ name: "add_to_cart", arguments: { id } });
         const data = res.structuredContent as unknown as AddToCartResult | undefined;
         // Ответ несёт актуальную корзину — обновляем бейдж, оставаясь на текущей вью.
-        if (data?.added && data.cart) setCart(data.cart);
-        else setNotice("Не удалось добавить товар в корзину.");
+        if (data) setCart(data.cart);
+        if (!data?.added) setNotice("Товар не найден в каталоге — не добавлен в корзину.");
       } catch {
         setNotice("Не удалось добавить товар в корзину.");
       } finally {
@@ -171,10 +158,9 @@ export function MegamarketApp() {
     setCartLoading(true);
     setView("cart");
     try {
-      // Корзина изменчива — всегда читаем актуальное состояние живьём (без кэша).
       const res = await app.callServerTool({ name: "view_cart", arguments: {} });
       const data = res.structuredContent as unknown as ViewCartResult | undefined;
-      if (data && !data.fallback && data.cart) setCart(data.cart);
+      if (data) setCart(data.cart);
       else setNotice("Не удалось загрузить корзину.");
     } catch {
       setNotice("Не удалось загрузить корзину.");
@@ -194,42 +180,37 @@ export function MegamarketApp() {
     setNotice(null);
   }, []);
 
-  // «Перейти к оплате» из корзины — чисто клиентский переход на экран хэндофа (корзина
-  // уже в стейте). Сам вывод окна вперёд делает кнопка «Открыть в браузере» (см. openBrowser).
+  // «Оформить» из корзины — чисто клиентский переход на экран подтверждения (корзина
+  // уже в стейте). Само подтверждение (и очистка корзины) — на кнопке в CheckoutView.
   const goCheckout = useCallback(() => {
-    setCheckoutOpened(false);
-    setCheckoutFailed(false);
+    setConfirmed(null);
     setView("checkout");
   }, []);
 
-  const openBrowser = useCallback(async () => {
-    if (checkoutOpening) return;
+  const confirmOrder = useCallback(async () => {
+    if (confirming) return;
     const app = appRef.current;
     if (!app) {
-      setCheckoutFailed(true);
+      setNotice("Нет связи с хостом — попробуйте ещё раз.");
       return;
     }
 
-    setCheckoutOpening(true);
-    setCheckoutFailed(false);
+    setConfirming(true);
     try {
-      // Хэндоф: сервер переходит на реальную корзину, выводит живое окно вперёд и
-      // возвращает её актуальный снимок — обновляем сводку и подтверждаем открытие.
       const res = await app.callServerTool({ name: "checkout", arguments: {} });
       const data = res.structuredContent as unknown as CheckoutResult | undefined;
-      if (data && !data.fallback && data.cart) {
-        setCart(data.cart);
-        setCheckoutOpened(true);
+      if (data) {
+        setConfirmed(data);
+        setCart({ items: [], totalCount: 0, totalPrice: 0 }); // сервер уже очистил корзину
       } else {
-        // Окно могло не выйти вперёд (антибот/таймаут) — подсказываем открыть вручную.
-        setCheckoutFailed(true);
+        setNotice("Не удалось оформить заказ.");
       }
     } catch {
-      setCheckoutFailed(true);
+      setNotice("Не удалось оформить заказ.");
     } finally {
-      setCheckoutOpening(false);
+      setConfirming(false);
     }
-  }, [checkoutOpening]);
+  }, [confirming]);
 
   const backFromCheckout = useCallback(() => {
     setView("cart");
@@ -249,7 +230,28 @@ export function MegamarketApp() {
             {notice}
           </div>
         ) : null}
-        {renderBody({ result, view, detail, detailMeta, cart, loadingId, addingId, cartLoading, checkoutOpening, checkoutOpened, checkoutFailed, detailError, isConnected, error, openProduct, addToCart, openCart, goBack, backFromCart, goCheckout, openBrowser, backFromCheckout })}
+        {renderBody({
+          result,
+          view,
+          detail,
+          cart,
+          loadingId,
+          addingId,
+          cartLoading,
+          confirming,
+          confirmed,
+          detailError,
+          isConnected,
+          error,
+          openProduct,
+          addToCart,
+          openCart,
+          goBack,
+          backFromCart,
+          goCheckout,
+          confirmOrder,
+          backFromCheckout,
+        })}
       </main>
     </>
   );
@@ -259,40 +261,29 @@ interface BodyProps {
   result: SearchResult | null;
   view: View;
   detail: ProductDetail | null;
-  detailMeta: DetailMeta | null;
   cart: Cart | null;
   loadingId: string | null;
   addingId: string | null;
   cartLoading: boolean;
-  checkoutOpening: boolean;
-  checkoutOpened: boolean;
-  checkoutFailed: boolean;
+  confirming: boolean;
+  confirmed: CheckoutResult | null;
   detailError: string | null;
   isConnected: boolean;
   error: Error | null;
-  openProduct: (id: string, url: string | null) => void;
-  addToCart: (id: string, url: string | null) => void;
+  openProduct: (id: string) => void;
+  addToCart: (id: string) => void;
   openCart: () => void;
   goBack: () => void;
   backFromCart: () => void;
   goCheckout: () => void;
-  openBrowser: () => void;
+  confirmOrder: () => void;
   backFromCheckout: () => void;
 }
 
 function renderBody(p: BodyProps) {
   if (p.view === "checkout") {
-    if (p.cart)
-      return (
-        <CheckoutView
-          cart={p.cart}
-          opening={p.checkoutOpening}
-          opened={p.checkoutOpened}
-          failed={p.checkoutFailed}
-          onOpenBrowser={p.openBrowser}
-          onBack={p.backFromCheckout}
-        />
-      );
+    if (p.confirmed) return <CheckoutView result={p.confirmed} confirmed onBack={p.backFromCheckout} onConfirm={p.confirmOrder} />;
+    if (p.cart) return <CheckoutView cart={p.cart} confirming={p.confirming} onBack={p.backFromCheckout} onConfirm={p.confirmOrder} />;
     return <Placeholder text="Корзина пуста." onBack={p.backFromCheckout} />;
   }
   if (p.view === "cart") {
@@ -301,12 +292,22 @@ function renderBody(p: BodyProps) {
     return <Placeholder text="Корзина пуста." onBack={p.backFromCart} />;
   }
   if (p.view === "detail" && p.detail)
-    return <ProductDetailView detail={p.detail} onBack={p.goBack} onAddToCart={() => p.addToCart(p.detail!.id, p.detail!.url)} adding={p.addingId === p.detail.id} source={p.detailMeta?.source} fetchedAt={p.detailMeta?.fetchedAt} />;
+    return (
+      <ProductDetailView
+        detail={p.detail}
+        onBack={p.goBack}
+        onAddToCart={() => p.addToCart(p.detail!.id)}
+        adding={p.addingId === p.detail.id}
+      />
+    );
   if (p.detailError) return <Placeholder text={p.detailError} tone="error" onBack={p.goBack} />;
   if (p.loadingId) return <Placeholder text="Загружаем карточку товара…" />;
-  if (p.result?.fallback) return <FallbackView query={p.result.query} />;
   if (p.result)
-    return <SearchView result={p.result} onOpenProduct={p.openProduct} onAddToCart={p.addToCart} loadingId={p.loadingId} addingId={p.addingId} />;
+    return p.result.products.length ? (
+      <SearchView result={p.result} onOpenProduct={p.openProduct} onAddToCart={p.addToCart} loadingId={p.loadingId} addingId={p.addingId} />
+    ) : (
+      <FallbackView query={p.result.query} />
+    );
   if (p.error) return <Placeholder text={`Ошибка моста: ${p.error.message}`} tone="error" />;
   return <Placeholder text={p.isConnected ? "Загружаем выдачу Megamarket…" : "Подключаемся к хосту…"} />;
 }

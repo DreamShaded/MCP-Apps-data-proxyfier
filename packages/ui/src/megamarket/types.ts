@@ -14,16 +14,12 @@ export interface Product {
   rating: number | null;
   reviewCount: number | null;
   url: string | null;
+  brand: string | null;
 }
 
 export interface SearchResult {
   query: string;
   products: Product[];
-  source: "hit" | "miss" | "fallback";
-  stale: boolean;
-  /** Фолбэк без данных к показу → рисуем заглушку, а не пустой грид. */
-  fallback: boolean;
-  fetchedAt: string | null;
 }
 
 /** Характеристика деталки: пара «название — значение». Зеркалит `productSpecSchema`. */
@@ -41,14 +37,11 @@ export interface ProductDetail extends Product {
 
 /** Результат `get_product`. Зеркалит `getProductResultSchema`. */
 export interface GetProductResult {
+  /** `null`, если `id` не найден в статическом каталоге. */
   product: ProductDetail | null;
-  source: "hit" | "miss" | "fallback";
-  stale: boolean;
-  fallback: boolean;
-  fetchedAt: string | null;
 }
 
-/** Позиция реальной корзины. Зеркалит `cartItemSchema` (граница postMessage-моста). */
+/** Позиция корзины (in-memory). Зеркалит `cartItemSchema` (граница postMessage-моста). */
 export interface CartItem {
   id: string;
   title: string;
@@ -59,33 +52,27 @@ export interface CartItem {
   lineTotal: number | null;
 }
 
-/** Состояние реальной корзины Megamarket. Зеркалит `cartSchema`. */
+/** Состояние корзины Megamarket. Зеркалит `cartSchema`. */
 export interface Cart {
   items: CartItem[];
   totalCount: number;
   totalPrice: number | null;
 }
 
-/** Результат `add_to_cart`. Зеркалит `addToCartResultSchema`. */
+/** Результат `add_to_cart`. Зеркалит `addToCartResultSchema`. `added:false` — id не найден. */
 export interface AddToCartResult {
-  cart: Cart | null;
+  cart: Cart;
   added: boolean;
-  fallback: boolean;
-  fetchedAt: string | null;
 }
 
 /** Результат `view_cart`. Зеркалит `viewCartResultSchema`. */
 export interface ViewCartResult {
-  cart: Cart | null;
-  fallback: boolean;
-  fetchedAt: string | null;
+  cart: Cart;
 }
 
-/** Результат `checkout` (хэндоф «открыть в браузере»). Зеркалит `checkoutResultSchema`. */
+/** Результат `checkout` — статическое подтверждение заказа. Зеркалит `checkoutResultSchema`. */
 export interface CheckoutResult {
-  /** Ссылка на реальную корзину/оформление Megamarket — отдаётся всегда, даже на сбое. */
-  url: string;
-  cart: Cart | null;
-  fallback: boolean;
-  fetchedAt: string | null;
+  /** Снимок корзины на момент оформления (после вызова корзина очищена). */
+  cart: Cart;
+  confirmedAt: string;
 }

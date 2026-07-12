@@ -52,8 +52,7 @@ export type Deposit = z.infer<typeof depositSchema>;
 /**
  * Выходная схема `search_deposits` — то, что UI читает из `structuredContent`.
  * `amount`/`termMonths` — эхо запроса (начальные позиции слайдеров); `deposits`
- * несут полную сетку для клиентского пересчёта. Обёртка происхождения/деградации
- * зеркалит выдачу Megamarket (UI решает по `fallback`).
+ * несут полную сетку для клиентского пересчёта.
  */
 export const searchDepositsResultSchema = z.object({
   /** Запрошенная сумма — начальная позиция слайдера суммы. */
@@ -61,12 +60,6 @@ export const searchDepositsResultSchema = z.object({
   /** Запрошенный срок в месяцах — начальная позиция слайдера срока. */
   termMonths: z.number(),
   deposits: z.array(depositSchema),
-  source: z.enum(["hit", "miss", "fallback"]),
-  /** Отдан протухший пример (живой источник не успел/упал, но запись была). */
-  stale: z.boolean(),
-  /** Фолбэк без данных к показу → UI рисует аккуратную заглушку. */
-  fallback: z.boolean(),
-  fetchedAt: z.string().nullable(),
 });
 
 export type SearchDepositsResult = z.infer<typeof searchDepositsResultSchema>;

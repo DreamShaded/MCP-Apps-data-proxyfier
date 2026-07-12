@@ -1,40 +1,38 @@
 /**
  * Дизайн-токены Megamarket — единый источник для всех вью флоу (выдача → деталка →
- * корзина). Бренд Megamarket — фиолетовый с градиентом; цена/скидка/рейтинг —
- * фирменные плашки.
+ * корзина → подтверждение). Значения извлечены из реальных CSS живого сайта
+ * (`pages/market/*_files/*.css`), не подобраны на глаз.
  *
- * ВНИМАНИЕ (HITL): значения подобраны по фирменному стилю Megamarket, но финальная
- * визуальная сверка — ручная, на боевой сборке Claude Desktop. Точные hex берутся со
- * скриншота живого сайта (Playwright-сессия + ai-multimodal); правятся здесь —
- * одна точка, все вью подхватывают через CSS-переменные.
+ * Ключевое: фирменный акцент Megamarket — фиолетовый (`--pui-accent-brand: #8654CC`,
+ * подтверждён заливкой логотипа `logo-two-rows.a7be8a.svg`), а не зелёный — узкий
+ * зелёный (`#08A652`) в реальном CSS зарезервирован под Sber-элементы (бонусы SberPay
+ * и т.п.) и здесь не используется. `brandDark` — производный тёмный оттенок для
+ * hover/active (в исходном CSS это отдельная dark-тема, не hover-состояние).
  */
 export const megamarketTokens = {
   color: {
-    /** Фирменный фиолетовый — основные акценты, цена-выгода, активные элементы. */
-    brand: "#7000FF",
-    brandDark: "#5A00CC",
-    brandSoft: "#F0E6FF",
-    /** Градиент бренда (логотип/CTA). */
-    gradientFrom: "#7000FF",
-    gradientTo: "#A100FF",
-    /** Плашка скидки — пурпурно-розовая «выгода». */
-    discountBg: "#F5167E",
+    brand: "#8654CC",
+    brandDark: "#6E3FA8",
+    brandSoft: "#F6F0FF",
+    /** Плашка скидки/акции. */
+    discountBg: "#EB4650",
     discountText: "#FFFFFF",
     /** Звезда рейтинга. */
-    rating: "#FF9500",
-    text: "#1A1A2E",
-    textMuted: "#6B6B7B",
+    rating: "#FFAC47",
+    text: "#15181A",
+    textMuted: "#6B7280",
     /** Старая (зачёркнутая) цена. */
-    oldPrice: "#9A9AA8",
+    oldPrice: "#9CA6AE",
     cardBg: "#FFFFFF",
     pageBg: "transparent",
-    border: "#ECECF2",
+    border: "#E4EBF0",
   },
   radius: { card: "16px", chip: "8px", image: "12px" },
-  shadow: { card: "0 2px 12px rgba(34, 0, 80, 0.08)" },
+  shadow: { card: "0 2px 12px rgba(21, 24, 26, 0.08)" },
   font: {
-    // Системный стек без CDN (требование песочницы-iframe), близкий к гротеску бренда.
-    family: '"Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif',
+    // Реальный стек Megamarket (MegaSans — кастомный веб-шрифт, файла которого нет в
+    // снапшотах) — системный fallback-хвост подхватывает рендер без загрузки шрифта.
+    family: 'MegaSans, Helvetica, Arial, Verdana, Tahoma, sans-serif',
   },
 } as const;
 
@@ -50,8 +48,6 @@ export function tokensToCssVars(t: MegamarketTokens = megamarketTokens): string 
     `--mm-brand:${t.color.brand}`,
     `--mm-brand-dark:${t.color.brandDark}`,
     `--mm-brand-soft:${t.color.brandSoft}`,
-    `--mm-gradient-from:${t.color.gradientFrom}`,
-    `--mm-gradient-to:${t.color.gradientTo}`,
     `--mm-discount-bg:${t.color.discountBg}`,
     `--mm-discount-text:${t.color.discountText}`,
     `--mm-rating:${t.color.rating}`,

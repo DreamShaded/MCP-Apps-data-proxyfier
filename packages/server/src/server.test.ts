@@ -9,23 +9,10 @@ import { StdioTransportProvider } from "./transport/stdio-transport-provider.js"
 
 const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
 
-/** Фейк-драйвер браузера: тесты уровня каркаса не должны поднимать Chromium. */
-const fakeDriver = {
-  withPage: async <T>(fn: (page: never) => Promise<T>): Promise<T> => fn(undefined as never),
-  close: async () => {},
-};
-const fakeSessionChecker = { checkSession: async () => [] };
-
 /** Поднять сервер, связанный с in-memory клиентом, — тестовая граница на уровне инструментов MCP. */
 async function connectTestClient() {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const server = createServer({
-    pingHtml: FAKE_HTML,
-    megamarketHtml: FAKE_HTML,
-    depositsHtml: FAKE_HTML,
-    sessionChecker: fakeSessionChecker,
-    driver: fakeDriver,
-  });
+  const server = createServer({ pingHtml: FAKE_HTML, megamarketHtml: FAKE_HTML, depositsHtml: FAKE_HTML });
   const client = new Client({ name: "test-client", version: "1.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   return { client, server };
@@ -77,6 +64,15 @@ test("createServer wires the deposits app: search_deposits tool + its ui:// reso
 
   const { contents } = await client.readResource({ uri: DEPOSITS_UI_RESOURCE_URI });
   assert.equal((contents[0] as { text?: string }).text, FAKE_HTML);
+  await server.close();
+});
+
+test("createServer wires the megamarket app: all five tools + its ui:// resource", async () => {
+  const { client, server } = await connectTestClient();
+  const { tools } = await client.listTools();
+  for (const name of ["search_products", "get_product", "add_to_cart", "view_cart", "checkout"]) {
+    assert.ok(tools.some((t) => t.name === name), `${name} should be registered by createServer`);
+  }
   await server.close();
 });
 

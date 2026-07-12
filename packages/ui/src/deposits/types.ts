@@ -32,9 +32,4 @@ export interface SearchDepositsResult {
   amount: number;
   termMonths: number;
   deposits: Deposit[];
-  source: "hit" | "miss" | "fallback";
-  stale: boolean;
-  /** Фолбэк без данных к показу → рисуем заглушку, а не пустой список. */
-  fallback: boolean;
-  fetchedAt: string | null;
 }

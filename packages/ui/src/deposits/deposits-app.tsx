@@ -6,7 +6,6 @@ import { amountBounds, termBounds, clamp } from "./yield";
 import { DepositControls } from "./deposit-controls";
 import { DepositCard } from "./deposit-card";
 import { FallbackView } from "./fallback-view";
-import { SourceBadge } from "../source-badge";
 
 /**
  * Корневое приложение «Вклады Сбера» — отдельный MCP App (свой iframe, без корзины/
@@ -54,7 +53,6 @@ export function DepositsApp() {
   );
 
   function renderBody() {
-    if (result?.fallback) return <FallbackView />;
     if (!result) {
       const text = error
         ? `Ошибка моста: ${error.message}`
@@ -63,14 +61,12 @@ export function DepositsApp() {
           : "Подключаемся к хосту…";
       return <Placeholder text={text} tone={error ? "error" : undefined} />;
     }
-    if (deposits.length === 0)
-      return <Placeholder text="По вашему запросу вкладов не нашлось." />;
+    if (deposits.length === 0) return <FallbackView />;
 
     return (
       <>
         <header className="sb-head">
           <span className="sb-logo">СБЕР · Вклады</span>
-          <SourceBadge source={result.source} fetchedAt={result.fetchedAt} />
         </header>
         <DepositControls
           amount={amount}
