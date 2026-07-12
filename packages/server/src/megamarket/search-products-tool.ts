@@ -1,79 +1,34 @@
 import { z } from "zod";
-import type { Page } from "playwright";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { BrowserDriver } from "../browser/browser-driver.js";
-import type { CachedReader } from "../cache/cached-reader.js";
+import { searchProducts } from "../data-source/static-catalog.js";
 import { MEGAMARKET_UI_RESOURCE_URI } from "./megamarket-ui-resource.js";
-import { scrapeSearch } from "./scrape-search.js";
-import {
-  searchFiltersSchema,
-  searchResultSchema,
-  type Product,
-  type SearchFilters,
-  type SearchResult,
-} from "./product.js";
-
-/** Сигнатура live-скрейпа — точка подмены в тестах (без реального браузера). */
-export type SearchScraper = (page: Page, query: string, filters: SearchFilters) => Promise<Product[]>;
-
-/** Зависимости инструмента — инъектируются, чтобы тестировать его как чёрный ящик. */
-export interface SearchProductsDeps {
-  driver: BrowserDriver;
-  reader: CachedReader;
-  /** Подмена live-скрейпа в тестах (по умолчанию — реальный Playwright-скрейп). */
-  scrape?: SearchScraper;
-}
+import { searchFiltersSchema, searchResultSchema, type SearchResult } from "./product.js";
 
 /**
- * Инструмент `search_products`: чтение через кэш-слой (хит → мгновенно; мисс → live
- * Playwright под сессией → запись), выдача в `structuredContent` гридом для UI.
- * Таймаут/сбой живого источника кэш-слой превращает в `source:'fallback'` — инструмент
- * лишь прокидывает это в UI флагом `fallback`, чтобы тот нарисовал заглушку, а не завис.
+ * Инструмент `search_products`: поиск по статическому каталогу Megamarket (собран из
+ * снапшотов `pages/` скриптом `pnpm update:data`) — подстрока в названии/бренде + ценовой
+ * коридор, без сети и без браузера.
  */
-export function registerSearchProductsTool(server: McpServer, deps: SearchProductsDeps): void {
-  const scrape = deps.scrape ?? scrapeSearch;
-
+export function registerSearchProductsTool(server: McpServer): void {
   registerAppTool(
     server,
     "search_products",
     {
       title: "Поиск товаров Megamarket",
       description:
-        "Ищет товары на Megamarket и рендерит выдачу гридом карточек (фото, название, цена, рейтинг). Золотые запросы отдаются из кэша мгновенно, произвольные — вживую через браузер.",
+        "Ищет товары в статическом каталоге Megamarket и рендерит выдачу гридом карточек (фото, название, цена, рейтинг).",
       inputSchema: {
         query: z.string().min(1).describe("Поисковый запрос, например «беспроводные наушники»"),
         filters: searchFiltersSchema.optional(),
-        fresh: z
-          .boolean()
-          .optional()
-          .describe("Обойти кэш и запросить вживую через браузер (медленнее). Для самых свежих данных или чтобы показать живой запрос."),
       },
       // Единый источник схемы выдачи — `searchResultSchema` (без дубля формы здесь).
       outputSchema: searchResultSchema.shape,
       _meta: { ui: { resourceUri: MEGAMARKET_UI_RESOURCE_URI } },
     },
-    async ({ query, filters, fresh }) => {
-      const args = { query, filters: filters ?? {} };
-      // `fresh` ключ кэша не меняет — золотой и живой результат живут под одним ключом.
-      const result = await deps.reader.read<Product[]>(
-        "search_products",
-        args,
-        () => deps.driver.withPage((page) => scrape(page, query, args.filters)),
-        { mode: fresh ? "live" : undefined },
-      );
-
-      const products = result.data ?? [];
-      const fallback = result.source === "fallback" && result.data === null;
-      const structuredContent: SearchResult = {
-        query,
-        products,
-        source: result.source,
-        stale: result.stale,
-        fallback,
-        fetchedAt: result.fetchedAt,
-      };
-
+    async ({ query, filters }) => {
+      const products = searchProducts(query, filters ?? {});
+      const structuredContent: SearchResult = { query, products };
       return { content: [{ type: "text", text: summarize(query, structuredContent) }], structuredContent };
     },
   );
@@ -81,7 +36,5 @@ export function registerSearchProductsTool(server: McpServer, deps: SearchProduc
 
 /** Человекочитаемая сводка для текстового канала чата (рядом с UI-гридом). */
 function summarize(query: string, r: SearchResult): string {
-  if (r.fallback) return `Не удалось загрузить выдачу Megamarket по запросу «${query}» — показан фолбэк.`;
-  const head = `Megamarket по запросу «${query}»: ${r.products.length} товаров`;
-  return r.stale ? `${head} (из кэша, возможно неактуально).` : `${head}.`;
+  return `Megamarket по запросу «${query}»: ${r.products.length} товаров.`;
 }

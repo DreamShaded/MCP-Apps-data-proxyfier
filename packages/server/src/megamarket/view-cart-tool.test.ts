@@ -1,30 +1,20 @@
-import { test } from "node:test";
+import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { registerViewCartTool, type CartReader } from "./view-cart-tool.js";
+import * as cartStore from "../data-source/cart-store.js";
+import { registerViewCartTool } from "./view-cart-tool.js";
 import { MEGAMARKET_UI_RESOURCE_URI } from "./megamarket-ui-resource.js";
-import type { Cart, ViewCartResult } from "./cart.js";
+import type { ViewCartResult } from "./cart.js";
 
-const CART: Cart = {
-  items: [
-    { id: "p1", title: "Наушники A", price: 4990, quantity: 2, imageUrl: null, url: null, lineTotal: 9980 },
-  ],
-  totalCount: 2,
-  totalPrice: 9980,
-};
-
-const fakeDriver = {
-  withPage: async <T>(fn: (page: never) => Promise<T>): Promise<T> => fn({} as never),
-  close: async () => {},
-};
+beforeEach(() => cartStore.clear());
 
 /** Поднять сервер с одним инструментом `view_cart` и связать с in-memory клиентом. */
-async function connect(read: CartReader) {
+async function connect() {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const server = new McpServer({ name: "t", version: "1.0.0" });
-  registerViewCartTool(server, { driver: fakeDriver, read });
+  registerViewCartTool(server);
   const client = new Client({ name: "test-client", version: "1.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   return { client, server };
@@ -36,7 +26,7 @@ async function callView(client: Client) {
 }
 
 test("view_cart declares its UI via _meta.ui.resourceUri (same Megamarket app)", async () => {
-  const { client, server } = await connect(async () => CART);
+  const { client, server } = await connect();
   const { tools } = await client.listTools();
   const tool = tools.find((t) => t.name === "view_cart");
   const ui = (tool?._meta as { ui?: { resourceUri?: string } } | undefined)?.ui;
@@ -44,26 +34,18 @@ test("view_cart declares its UI via _meta.ui.resourceUri (same Megamarket app)",
   await server.close();
 });
 
-test("live read → returns the real cart state as structuredContent", async () => {
-  let calls = 0;
-  const { client, server } = await connect(async () => (calls++, CART));
-
+test("empty cart → totalCount 0, empty items", async () => {
+  const { client, server } = await connect();
   const sc = await callView(client);
-  assert.equal(sc.fallback, false);
-  assert.equal(sc.cart?.totalCount, 2);
-  assert.equal(sc.cart?.items[0].quantity, 2);
-  assert.equal(sc.cart?.totalPrice, 9980);
-  assert.equal(calls, 1, "корзина читается живьём (не из кэша)");
+  assert.deepEqual(sc.cart, { items: [], totalCount: 0, totalPrice: 0 });
   await server.close();
 });
 
-test("read failure → fallback flag, null cart, no throw", async () => {
-  const { client, server } = await connect(async () => {
-    throw new Error("antibot / timeout");
-  });
+test("reflects state added by add_to_cart (shared in-memory store)", async () => {
+  cartStore.add("600018869646");
+  const { client, server } = await connect();
   const sc = await callView(client);
-  assert.equal(sc.fallback, true);
-  assert.equal(sc.cart, null);
-  assert.equal(sc.fetchedAt, null);
+  assert.equal(sc.cart.totalCount, 1);
+  assert.equal(sc.cart.items[0].id, "600018869646");
   await server.close();
 });

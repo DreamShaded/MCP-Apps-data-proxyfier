@@ -10,14 +10,12 @@
     "build": "tsc -p tsconfig.json",
     "prestart": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "bootstrap:login": "tsx src/bootstrap-login.ts",
-    "seed:cache": "tsx src/seed-cache.ts",
+    "update:data": "tsx scripts/update-data.ts",
     "test": "node --test --import tsx 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.7.4",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "playwright": "^1.49.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

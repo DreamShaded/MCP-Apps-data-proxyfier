@@ -1,12 +1,2 @@
 node_modules/
 dist/
-
-# Local Chrome profile holding authenticated Sber/Megamarket sessions — never commit.
-# Keep the directory in the repo (via .gitkeep) but ignore its contents.
-.session/*
-!.session/.gitkeep
-
-# Runtime cache of live reads is ignored; golden fixtures live in golden/ and are committed.
-cache/data/*
-!cache/data/.gitkeep
-!cache/data/golden/

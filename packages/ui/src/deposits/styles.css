@@ -29,50 +29,12 @@ body {
 }
 
 .sb-logo {
+  font-family: var(--sb-font-heading);
   font-weight: 800;
   font-size: 14px;
   letter-spacing: 0.01em;
-  background: linear-gradient(135deg, var(--sb-gradient-from), var(--sb-gradient-to));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--sb-brand);
   white-space: nowrap;
-}
-
-/* --- Бейдж источника (кэш / вживую / нет связи) --- */
-.sb-head .src-badge {
-  margin-left: auto;
-}
-.src-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  padding: 3px 8px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.src-badge__icon {
-  font-size: 10px;
-}
-.src-badge__time {
-  font-weight: 500;
-  opacity: 0.8;
-}
-.src-badge--hit {
-  color: #4b5563;
-  background: rgba(120, 120, 128, 0.14);
-}
-.src-badge--miss {
-  color: #0a7f57;
-  background: rgba(16, 185, 129, 0.16);
-}
-.src-badge--fallback {
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.18);
 }
 
 /* --- Панель управления (слайдеры + капитализация) --- */

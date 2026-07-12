@@ -6,7 +6,7 @@ import { z } from "zod";
  * где живой сайт может их не отдать (рейтинг/старая цена есть не у всех позиций).
  */
 export const productSchema = z.object({
-  /** Стабильный идентификатор позиции (для ключей React и будущего `get_product`). */
+  /** Стабильный идентификатор позиции (для ключей React и `get_product`). */
   id: z.string(),
   title: z.string(),
   /** Текущая цена в рублях (целое число рублей — копейки в выдаче не показываем). */
@@ -19,8 +19,10 @@ export const productSchema = z.object({
   /** Рейтинг 0..5; `null`, если у позиции ещё нет оценок. */
   rating: z.number().nullable(),
   reviewCount: z.number().nullable(),
-  /** Абсолютная ссылка на страницу товара (для хэндофа и будущей деталки). */
+  /** Абсолютная ссылка на страницу товара (справочно — переход по ней вживую не идёт). */
   url: z.string().nullable(),
+  /** Бренд товара — участвует в поиске по статическому каталогу вместе с названием. */
+  brand: z.string().nullable(),
 });
 
 export type Product = z.infer<typeof productSchema>;
@@ -37,13 +39,6 @@ export type SearchFilters = z.infer<typeof searchFiltersSchema>;
 export const searchResultSchema = z.object({
   query: z.string(),
   products: z.array(productSchema),
-  /** Откуда выдача: кэш-хит, живой источник или деградация. UI решает по `fallback`. */
-  source: z.enum(["hit", "miss", "fallback"]),
-  /** Отдан протухший пример (живой источник не успел/упал, но запись была). */
-  stale: z.boolean(),
-  /** Фолбэк без данных к показу → UI рисует аккуратную заглушку, а не пустоту. */
-  fallback: z.boolean(),
-  fetchedAt: z.string().nullable(),
 });
 
 export type SearchResult = z.infer<typeof searchResultSchema>;
@@ -72,14 +67,10 @@ export const productDetailSchema = productSchema.extend({
 
 export type ProductDetail = z.infer<typeof productDetailSchema>;
 
-/** Выходная схема `get_product`. Зеркалит обёртку выдачи: данные + происхождение/деградация. */
+/** Выходная схема `get_product`. */
 export const getProductResultSchema = z.object({
-  /** Деталь товара; `null` только у фолбэка без закэшированного примера. */
+  /** Деталь товара; `null`, если `id` не найден в статическом каталоге. */
   product: productDetailSchema.nullable(),
-  source: z.enum(["hit", "miss", "fallback"]),
-  stale: z.boolean(),
-  fallback: z.boolean(),
-  fetchedAt: z.string().nullable(),
 });
 
 export type GetProductResult = z.infer<typeof getProductResultSchema>;

@@ -1,6 +1,5 @@
 import type { SearchResult } from "./types";
 import { ProductCard } from "./product-card";
-import { SourceBadge } from "../source-badge";
 
 /** Выдача поиска: шапка с запросом + грид карточек. Без горизонтального скролла. */
 export function SearchView({
@@ -18,7 +17,7 @@ export function SearchView({
   /** Какая карточка добавляется в корзину (`add_to_cart`). */
   addingId: string | null;
 }) {
-  const { query, products, source, fetchedAt } = result;
+  const { query, products } = result;
   return (
     <section className="mm-search">
       <header className="mm-search__head">
@@ -29,7 +28,6 @@ export function SearchView({
             {products.length ? `${products.length} товаров` : "ничего не найдено"}
           </span>
         </div>
-        <SourceBadge source={source} fetchedAt={fetchedAt} />
       </header>
 
       {products.length ? (
