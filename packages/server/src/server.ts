@@ -9,6 +9,7 @@ import { registerViewCartTool } from "./megamarket/view-cart-tool.js";
 import { registerCheckoutTool } from "./megamarket/checkout-tool.js";
 import { registerDepositsUiResource } from "./deposits/deposits-ui-resource.js";
 import { registerSearchDepositsTool } from "./deposits/search-deposits-tool.js";
+import { registerDepositAdvisorSkillResources } from "./deposits/deposit-advisor-skill.js";
 
 /** Зависимости сервера. Все опциональны — в тестах подставляются фейковые HTML-заглушки. */
 export interface ServerDeps {
@@ -46,6 +47,8 @@ export function createServer(deps: ServerDeps = {}): McpServer {
   // доходности по слайдерам — целиком на клиенте.
   registerDepositsUiResource(server, depositsHtml);
   registerSearchDepositsTool(server);
+  // Скилл-методичка для агента (`skill://`): читается до вызова search_deposits.
+  registerDepositAdvisorSkillResources(server);
 
   return server;
 }
