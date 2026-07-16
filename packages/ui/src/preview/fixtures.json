@@ -1,0 +1,294 @@
+{
+  "_note": "Снято с живого сервера скриптом `pnpm update:fixtures`. Руками не править: превью должно показывать реальные ответы. Даты доставки заморожены на момент снятия.",
+  "generatedAt": "2026-07-16T10:10:27.504Z",
+  "friday": "2026-07-17",
+  "grid": {
+    "query": "наушники",
+    "products": [
+      {
+        "id": "700008245036",
+        "title": "Наушники Anker Soundcore Liberty 5 Pro белый",
+        "price": 15990,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUyNDA1OQ==/b0.jpg",
+        "rating": null,
+        "reviewCount": null,
+        "url": "https://megamarket.ru/catalog/details/naushniki-anker-soundcore-liberty-5-pro-belyy-700008245036/",
+        "brand": "Anker",
+        "anc": true,
+        "delivery": {
+          "days": 1,
+          "date": "2026-07-17",
+          "label": "Завтра"
+        }
+      },
+      {
+        "id": "700008245032",
+        "title": "Наушники Anker Soundcore Liberty 5 Pro чёрный",
+        "price": 15990,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDExXzg5NTcxNTA3Mw==/b0.jpg",
+        "rating": null,
+        "reviewCount": null,
+        "url": "https://megamarket.ru/catalog/details/naushniki-anker-soundcore-liberty-5-pro-chernyy-700008245032/",
+        "brand": "Anker",
+        "anc": true,
+        "delivery": {
+          "days": 3,
+          "date": "2026-07-19",
+          "label": "19 июля"
+        }
+      },
+      {
+        "id": "700008310268",
+        "title": "Наушники Яндекс Дропс с Алисой AI белый",
+        "price": 8980,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk4NDExXzIxNTM4Mzg0/b0.jpg",
+        "rating": null,
+        "reviewCount": null,
+        "url": "https://megamarket.ru/catalog/details/naushniki-yandeks-drops-s-alisoy-ai-belyy-700008310268/",
+        "brand": "Яндекс",
+        "anc": true,
+        "delivery": {
+          "days": 1,
+          "date": "2026-07-17",
+          "label": "Завтра"
+        }
+      },
+      {
+        "id": "100074709345",
+        "title": "Беспроводное наушники Apple AirPods Pro 3 White",
+        "price": 23040,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/-19/695/984/669/301/412/100074709345b0.webp",
+        "rating": 5,
+        "reviewCount": 9,
+        "url": "https://megamarket.ru/catalog/details/besprovodnoe-naushniki-apple-airpods-pro-3-white-100074709345/",
+        "brand": "Apple",
+        "anc": true,
+        "delivery": {
+          "days": 7,
+          "date": "2026-07-23",
+          "label": "23 июля"
+        }
+      },
+      {
+        "id": "600005366927",
+        "title": "Беcпроводные наушники Marshall MAJOR IV Brown",
+        "price": 5490,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/193/405/983/212/281/454/600005366927b0.jpeg",
+        "rating": 4.7,
+        "reviewCount": 598,
+        "url": "https://megamarket.ru/catalog/details/becprovodnye-naushniki-marshall-major-iv-korichnevye-600005366927/",
+        "brand": "Marshall",
+        "anc": false,
+        "delivery": {
+          "days": 2,
+          "date": "2026-07-18",
+          "label": "18 июля"
+        }
+      },
+      {
+        "id": "600004381095",
+        "title": "Беспроводные наушники Marshall MAJOR IV Black",
+        "price": 5490,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/107/030/353/282/294/4/600004381095b0.jpeg",
+        "rating": 4.5,
+        "reviewCount": 1350,
+        "url": "https://megamarket.ru/catalog/details/besprovodnye-naushniki-marshall-major-iv-black-600004381095/",
+        "brand": "Marshall",
+        "anc": false,
+        "delivery": {
+          "days": 5,
+          "date": "2026-07-21",
+          "label": "21 июля"
+        }
+      },
+      {
+        "id": "600023665151",
+        "title": "Беспроводные наушники Samsung Galaxy Buds 4 Pro (R640NZWA), черный",
+        "price": 21490,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/175/850/444/932/614/0/600023665151b0.png",
+        "rating": 5,
+        "reviewCount": 4,
+        "url": "https://megamarket.ru/catalog/details/besprovodnye-naushniki-samsung-galaxy-buds-4-pro-r640nzwa-chernyy-600023665151/",
+        "brand": "Samsung",
+        "anc": null,
+        "delivery": {
+          "days": 10,
+          "date": "2026-07-26",
+          "label": "26 июля"
+        }
+      },
+      {
+        "id": "600018869646",
+        "title": "Беспроводные наушники Marshall Major V Black (5602)",
+        "price": 8090,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/817/442/828/615/141/600018869646b0.jpg",
+        "rating": 4.5,
+        "reviewCount": 46,
+        "url": "https://megamarket.ru/catalog/details/besprovodnoe-naushniki-marshall-major-v-black-5602-600018869646/",
+        "brand": "Marshall",
+        "anc": true,
+        "delivery": {
+          "days": 1,
+          "date": "2026-07-17",
+          "label": "Завтра"
+        }
+      },
+      {
+        "id": "100061445418",
+        "title": "Беспроводные наушники Marshall Motif II A.N.C. черный",
+        "price": 19312,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/185/718/257/411/310/13/100061445418b0.jpg",
+        "rating": 4.5,
+        "reviewCount": 47,
+        "url": "https://megamarket.ru/catalog/details/besprovodnye-naushniki-marshall-motif-ii-anc-chernyy-100061445418/",
+        "brand": "Marshall",
+        "anc": true,
+        "delivery": {
+          "days": 14,
+          "date": "2026-07-30",
+          "label": "30 июля"
+        }
+      }
+    ]
+  },
+  "byFriday": {
+    "query": "наушники",
+    "products": [
+      {
+        "id": "700008245036",
+        "title": "Наушники Anker Soundcore Liberty 5 Pro белый",
+        "price": 15990,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUyNDA1OQ==/b0.jpg",
+        "rating": null,
+        "reviewCount": null,
+        "url": "https://megamarket.ru/catalog/details/naushniki-anker-soundcore-liberty-5-pro-belyy-700008245036/",
+        "brand": "Anker",
+        "anc": true,
+        "delivery": {
+          "days": 1,
+          "date": "2026-07-17",
+          "label": "Завтра"
+        }
+      },
+      {
+        "id": "700008310268",
+        "title": "Наушники Яндекс Дропс с Алисой AI белый",
+        "price": 8980,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk4NDExXzIxNTM4Mzg0/b0.jpg",
+        "rating": null,
+        "reviewCount": null,
+        "url": "https://megamarket.ru/catalog/details/naushniki-yandeks-drops-s-alisoy-ai-belyy-700008310268/",
+        "brand": "Яндекс",
+        "anc": true,
+        "delivery": {
+          "days": 1,
+          "date": "2026-07-17",
+          "label": "Завтра"
+        }
+      },
+      {
+        "id": "600018869646",
+        "title": "Беспроводные наушники Marshall Major V Black (5602)",
+        "price": 8090,
+        "oldPrice": null,
+        "discountPercent": null,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/817/442/828/615/141/600018869646b0.jpg",
+        "rating": 4.5,
+        "reviewCount": 46,
+        "url": "https://megamarket.ru/catalog/details/besprovodnoe-naushniki-marshall-major-v-black-5602-600018869646/",
+        "brand": "Marshall",
+        "anc": true,
+        "delivery": {
+          "days": 1,
+          "date": "2026-07-17",
+          "label": "Завтра"
+        }
+      }
+    ]
+  },
+  "detail": {
+    "id": "700008245036",
+    "title": "Наушники Anker Soundcore Liberty 5 Pro белый",
+    "price": 15990,
+    "oldPrice": null,
+    "discountPercent": null,
+    "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUyNDA1OQ==/b0.jpg",
+    "rating": null,
+    "reviewCount": null,
+    "url": "https://megamarket.ru/catalog/details/naushniki-anker-soundcore-liberty-5-pro-belyy-700008245036/",
+    "brand": "Anker",
+    "anc": true,
+    "delivery": {
+      "days": 1,
+      "date": "2026-07-17",
+      "label": "Завтра"
+    },
+    "images": [
+      "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUyNDA1OQ==/b0.jpg",
+      "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUxODY0NQ==/b1.jpg",
+      "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUyMDE5Nw==/b2.jpg",
+      "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/ccs/254875/MTk3NDA4XzkyMDUyMTAyMA==/b3.jpg"
+    ],
+    "specs": [
+      {
+        "name": "Частотный диапазон, в Гц",
+        "value": "20-20000"
+      },
+      {
+        "name": "Система активного шумоподавления",
+        "value": "Да"
+      },
+      {
+        "name": "Микрофон",
+        "value": "Да"
+      }
+    ],
+    "description": "Основные характеристики\n- Тип наушников: вакуумные \n- Подключение: беспроводное \n- Тип крепления: без крепления \n- Микрофон: да \n- Система активного шумоподавления: да \n- Спортивные: да \n \nТехнические характеристики\n- Диаметр мембраны: 12 мм \n- Импеданс: 14.2 Ом \n- Диапазон частот: 20-40000 Гц \n- Чип: Anker Thus AI \n \nМикрофон\n- Чувствительность: -42 дБ \n- Диапазон частот: 20-20000 Гц \n- Система активного шумоподавления: да \n- Расположение микрофона: на наушниках \n- Крепление микрофона: встроенный в наушник \n- Количество микрофонов (в 1 наушнике): 8 \n \nБеспроводная связь\n- Канал передачи данных: Bluetooth \n- Версия Bluetooth: 5.4 \n \nУправление\n- Управление: на наушниках \n- Сенсорный интерфейс: да \n- Функции управления: ответ/завершение вызова, включение/выключение наушников, воспроизведение/пауза, трек следующий/предыдущий, управление параметрами режимов, включение/выключение активного шумоподавления \n- Регулятор громкости: да \n- Голосовой набор: да \n \nПитание\n- Тип элементов питания: собственный аккумулятор \n- Емкость аккумулятора: 60 мАч \n- Емкость аккумулятора зарядного кейса: 800 мАч \n- Время работы в режиме музыки: 12 ч \n- Быстрая зарядка: 5 мин = 4 ч \n- Время работы с зарядным чехлом: 50 ч \n- Разъем питания: USB Type-C \n- Беспроводная зарядка: да \n \nФункции\n- Multipoint: да \n- Автоматическое парное соединение: да \n- Режим прозрачности: да \n- Голосовой ассистент: Anka \n \nДополнительные характеристики\n- Нестандартный дизайн: да \n- Дополнительная информация: двухчиповая система активного шумоподавления с AI-алгоритмами, технология распознавания голоса VPUI, поддержка Dolby Atmos, поддержка кодеков LDAC и Hi-Res, зарядный кейс с сенсорным экраном, возможность управления через приложение Soundcore \n \nМатериал\n- Материал амбушюр: силикон \n \nКонструкция\n- Пылезащитный корпус: да \n- Влагозащитный корпус: да \n- Класс пылевлагозащищенности: IP55 \n- Светодиодный индикатор: да \n- Цвет: белый \n- Цвет зарядного кейса: белый \n \nКомплектация\n- Сменные амбушюры: в комплекте \n- Количество пар сменных амбушюров: 5 \n- Зарядный кейс: да \n- USB кабель: да \n- Дополнительная комплектация: 3 крылышка для фиксации \n- Инструкция: да"
+  },
+  "cart": {
+    "items": [
+      {
+        "id": "600018869646",
+        "title": "Беспроводные наушники Marshall Major V Black (5602)",
+        "price": 8090,
+        "quantity": 1,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/817/442/828/615/141/600018869646b0.jpg",
+        "url": "https://megamarket.ru/catalog/details/besprovodnoe-naushniki-marshall-major-v-black-5602-600018869646/",
+        "lineTotal": 8090
+      },
+      {
+        "id": "600005366927",
+        "title": "Беcпроводные наушники Marshall MAJOR IV Brown",
+        "price": 5490,
+        "quantity": 1,
+        "imageUrl": "https://main-cdn.sbermegamarket.ru/mid9/hlr-system/193/405/983/212/281/454/600005366927b0.jpeg",
+        "url": "https://megamarket.ru/catalog/details/becprovodnye-naushniki-marshall-major-iv-korichnevye-600005366927/",
+        "lineTotal": 5490
+      }
+    ],
+    "totalCount": 2,
+    "totalPrice": 13580
+  }
+}

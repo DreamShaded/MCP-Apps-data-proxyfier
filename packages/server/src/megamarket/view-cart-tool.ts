@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as cartStore from "../data-source/cart-store.js";
 import { MEGAMARKET_UI_RESOURCE_URI } from "./megamarket-ui-resource.js";
 import { type ViewCartResult, viewCartResultSchema } from "./cart.js";
+import { goods } from "./plural.js";
 
 /** Инструмент `view_cart`: текущее состояние in-memory корзины процесса. */
 export function registerViewCartTool(server: McpServer): void {
@@ -26,5 +27,5 @@ export function registerViewCartTool(server: McpServer): void {
 /** Человекочитаемая сводка для текстового канала чата (рядом с UI-корзиной). */
 function summarize(r: ViewCartResult): string {
   if (r.cart.totalCount === 0) return "Корзина Megamarket пуста.";
-  return `Корзина Megamarket: ${r.cart.totalCount} товаров.`;
+  return `Корзина Megamarket: ${goods(r.cart.totalCount)}.`;
 }

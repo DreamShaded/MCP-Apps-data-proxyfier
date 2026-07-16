@@ -31,7 +31,8 @@ test("getProduct: degrades to a single-image, spec-less detail when no rich capt
       details: {},
     }),
   );
-  writeFileSync(join(dir, "deposits.json"), JSON.stringify({ deposits: [] }));
+  // Каталог грузится вместе со сроками доставки — фикстура обязана нести оба файла.
+  writeFileSync(join(dir, "delivery.json"), JSON.stringify({ days: { "no-detail": 3 } }));
 
   process.env.MCP_DATA_DIR = dir;
   try {

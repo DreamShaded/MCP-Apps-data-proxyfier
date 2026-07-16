@@ -13,8 +13,8 @@ export const PING_UI_RESOURCE_URI = "ui://mcp-app-proxyfier/ping.html";
 /**
  * Путь к собранному self-contained HTML по имени входа Vite: `dist/<name>.html`.
  * Каждое приложение (`index` — каркас-пинг, `megamarket` — флоу Megamarket) собирается
- * мульти-страничным билдом в отдельный файл. Базовый каталог переопределяется
- * `MCP_UI_DIST_DIR` (тесты / нестандартная раскладка).
+ * отдельным проходом в свой файл. Базовый каталог переопределяется `MCP_UI_DIST_DIR`
+ * (тесты / нестандартная раскладка).
  */
 function resolveUiHtmlPath(name: string): string {
   const here = dirname(fileURLToPath(import.meta.url));

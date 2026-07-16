@@ -12,6 +12,7 @@ import type {
   ViewCartResult,
 } from "./types";
 import { SearchView } from "./search-view";
+import { EMPTY_FILTERS, type FilterState } from "./product-filters";
 import { ProductDetailView } from "./product-detail-view";
 import { CartView } from "./cart-view";
 import { CheckoutView } from "./checkout-view";
@@ -37,6 +38,9 @@ type View = "search" | "detail" | "cart" | "checkout";
 export function MegamarketApp() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [view, setView] = useState<View>("search");
+  // Фильтры живут здесь, а не в SearchView: заход в деталку не должен их сбрасывать —
+  // «Назад» обязано вернуть ровно тот отфильтрованный список, из которого ушли.
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [detail, setDetail] = useState<ProductDetail | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -68,11 +72,29 @@ export function MegamarketApp() {
           setNotice(null);
           return;
         }
-        // По умолчанию — выдача поиска (host-инициированный search_products).
-        setResult((sc as unknown as SearchResult) ?? null);
-        setView("search");
-        setDetail(null);
-        setDetailError(null);
+        // `get_product` голосом («покажи подробнее вот эти») — та же деталка, что по клику.
+        // Различаем по форме payload: у выдачи есть `products`, у деталки — `product`.
+        if (sc && "product" in sc) {
+          const product = (sc as unknown as GetProductResult).product;
+          if (product) {
+            detailCache.current.set(product.id, product);
+            setDetail(product);
+            setDetailError(null);
+            setView("detail");
+          } else {
+            setDetailError("Товар не найден в каталоге.");
+            setView("search");
+          }
+          return;
+        }
+        if (sc && "products" in sc) {
+          // Новая выдача — новый набор брендов, старые фильтры к нему неприменимы.
+          setResult(sc as unknown as SearchResult);
+          setFilters(EMPTY_FILTERS);
+          setView("search");
+          setDetail(null);
+          setDetailError(null);
+        }
       };
     },
   });
@@ -233,6 +255,8 @@ export function MegamarketApp() {
         {renderBody({
           result,
           view,
+          filters,
+          setFilters,
           detail,
           cart,
           loadingId,
@@ -260,6 +284,8 @@ export function MegamarketApp() {
 interface BodyProps {
   result: SearchResult | null;
   view: View;
+  filters: FilterState;
+  setFilters: (next: FilterState) => void;
   detail: ProductDetail | null;
   cart: Cart | null;
   loadingId: string | null;
@@ -304,7 +330,15 @@ function renderBody(p: BodyProps) {
   if (p.loadingId) return <Placeholder text="Загружаем карточку товара…" />;
   if (p.result)
     return p.result.products.length ? (
-      <SearchView result={p.result} onOpenProduct={p.openProduct} onAddToCart={p.addToCart} loadingId={p.loadingId} addingId={p.addingId} />
+      <SearchView
+        result={p.result}
+        filters={p.filters}
+        onFiltersChange={p.setFilters}
+        onOpenProduct={p.openProduct}
+        onAddToCart={p.addToCart}
+        loadingId={p.loadingId}
+        addingId={p.addingId}
+      />
     ) : (
       <FallbackView query={p.result.query} />
     );

@@ -10,6 +10,7 @@
     "build:server": "pnpm --filter @mcp-app-proxyfier/server build",
     "start": "pnpm --filter @mcp-app-proxyfier/server start",
     "update:data": "pnpm --filter @mcp-app-proxyfier/server update:data",
+    "update:fixtures": "pnpm --filter @mcp-app-proxyfier/ui update:fixtures",
     "test": "pnpm --filter @mcp-app-proxyfier/server test && pnpm --filter @mcp-app-proxyfier/ui test"
   },
   "keywords": [],

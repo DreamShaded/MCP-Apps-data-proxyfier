@@ -587,3 +587,91 @@ body {
   font-weight: 600;
   color: var(--mm-brand);
 }
+
+/* --- Фильтры выдачи: чипы над гридом (форма — с живого сайта, pui-checked-control-item) --- */
+.mm-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.mm-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mm-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-chip);
+  background: var(--mm-card-bg);
+  color: var(--mm-text);
+  font-family: var(--mm-font);
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.mm-chip:hover:not(:disabled) {
+  border-color: var(--mm-brand);
+}
+
+.mm-chip--active {
+  background: var(--mm-brand-soft);
+  border-color: var(--mm-brand);
+  color: var(--mm-brand-dark);
+  font-weight: 500;
+}
+
+.mm-chip:disabled,
+.mm-filters__reset:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.mm-filters__reset {
+  margin-left: auto;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: var(--mm-text-muted);
+  font-family: var(--mm-font);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mm-filters__reset:hover:not(:disabled) {
+  color: var(--mm-brand-dark);
+}
+
+/* --- Срок доставки в карточке --- */
+.mm-card__delivery {
+  font-size: 12px;
+  color: var(--mm-text-muted);
+}
+
+.mm-card__delivery-label {
+  color: var(--mm-old-price);
+}
+
+.mm-card__delivery--fast {
+  color: var(--mm-success);
+  font-weight: 500;
+}
+
+/* Доставка — первая строка таблицы на деталке: ради неё туда и заходят. */
+.mm-specs__row--accent {
+  background: var(--mm-success-soft);
+  border-radius: var(--mm-radius-chip);
+  padding-inline: 8px;
+}
+
+.mm-specs__row--accent .mm-specs__value {
+  color: var(--mm-text);
+  font-weight: 600;
+}

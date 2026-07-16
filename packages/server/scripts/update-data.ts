@@ -1,22 +1,22 @@
 /**
  * Офлайн-обновление статических данных (`pnpm update:data`).
  *
- * Разбирает сохранённые HAR-снапшоты в `pages/` (реальные ответы megamarket.ru/sberbank.ru,
- * захваченные браузером вручную) и пишет `packages/server/data/{market,deposits}.json` —
- * единственный источник данных для MCP-инструментов. Сеть/браузер не трогает; запускается
- * вручную после того, как в `pages/` положили новые снапшоты.
+ * Разбирает сохранённые HAR-снапшоты в `pages/` (реальные ответы megamarket.ru, захваченные
+ * браузером вручную) и пишет `packages/server/data/market.json` — единственный источник
+ * данных для MCP-инструментов. Сеть/браузер не трогает; запускается вручную после того, как
+ * в `pages/` положили новые снапшоты.
  *
- * Идемпотентен: повторный прогон просто перезаписывает оба файла.
+ * Идемпотентен: повторный прогон просто перезаписывает файл.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-// --- типы совпадают по форме с zod-схемами server/src/megamarket/product.ts,
-// server/src/megamarket/cart.ts, server/src/deposits/deposit.ts, но не импортируются оттуда:
-// скрипт живёт вне `rootDir: src` пакета (не участвует в `tsc` сборке) и не должен тянуть
-// рантайм-зависимость от собираемого кода.
+// --- типы совпадают по форме с zod-схемами server/src/megamarket/product.ts и
+// server/src/megamarket/cart.ts, но не импортируются оттуда: скрипт живёт вне `rootDir: src`
+// пакета (не участвует в `tsc` сборке) и не должен тянуть рантайм-зависимость от
+// собираемого кода.
 interface Product {
   id: string;
   title: string;
@@ -39,27 +39,6 @@ interface ProductDetailExtra {
   images: string[];
   specs: ProductSpec[];
   description: string | null;
-}
-
-interface RateCell {
-  termMin: number;
-  termMax: number;
-  amountMin: number;
-  amountMax: number | null;
-  capitalization: boolean;
-  rate: number;
-}
-
-interface Deposit {
-  id: string;
-  name: string;
-  description: string | null;
-  minAmount: number;
-  maxAmount: number | null;
-  minTermMonths: number;
-  maxTermMonths: number;
-  capitalization: boolean;
-  rates: RateCell[];
 }
 
 const GALLERY_LIMIT = 6;
@@ -215,74 +194,6 @@ function parseMarketCatalog(pagesDir: string): { products: Product[]; details: R
   return { products: [...products.values()], details };
 }
 
-interface SberQvbEntry {
-  entityId: number;
-  code: number;
-  depositName: string;
-  capitalisation: number;
-  begTerm: number;
-  endTerm: number;
-  dcfTarList: Array<{ sumBeg: number; sumEnd: number; rate: number }>;
-}
-
-/**
- * Разобрать линейку вкладов из `getValQvbGroupList`. `capitalisation` в реальном ответе — не
- * булево, а числовой код тарифа (в снапшоте встречены `6` и `9`); большему коду соответствует
- * более высокая ставка на тех же срок/сумму — трактуем это как «есть капитализация» (`9`).
- * Причина: описания тарифов в самом ответе не хватает для однозначного вывода — решение
- * зафиксировано здесь как единственное место, где эта эвристика применяется.
- */
-function parseDeposits(pagesDir: string): Deposit[] {
-  const responses = readHarJsonResponses(join(pagesDir, "bank/vklad modal/www.sberbank.ru.har"), [
-    "depositRatesWidget/getValQvbGroupList",
-  ]);
-
-  const byName = new Map<string, SberQvbEntry[]>();
-  for (const { body } of responses) {
-    for (const group of body.valQvbList ?? []) {
-      for (const cs of group.csQvbList ?? []) {
-        for (const qvb of cs.qvbList ?? []) {
-          const list = byName.get(qvb.depositName) ?? [];
-          list.push(qvb);
-          byName.set(qvb.depositName, list);
-        }
-      }
-    }
-  }
-
-  const SENTINEL_MAX = 999_999_999_999;
-  const deposits: Deposit[] = [];
-  for (const [name, entries] of byName) {
-    const rates: RateCell[] = [];
-    for (const entry of entries) {
-      for (const tier of entry.dcfTarList) {
-        rates.push({
-          termMin: entry.begTerm,
-          termMax: entry.endTerm,
-          amountMin: tier.sumBeg,
-          amountMax: tier.sumEnd >= SENTINEL_MAX ? null : tier.sumEnd,
-          capitalization: entry.capitalisation === 9,
-          rate: tier.rate,
-        });
-      }
-    }
-    if (rates.length === 0) continue;
-
-    deposits.push({
-      id: String(entries[0].entityId),
-      name,
-      description: null, // маркетинговый текст живёт в CMS-вёрстке страницы, не в этом JSON — не выдумываем.
-      minAmount: Math.min(...rates.map((r) => r.amountMin)),
-      maxAmount: rates.some((r) => r.amountMax === null) ? null : Math.max(...rates.map((r) => r.amountMax as number)),
-      minTermMonths: Math.min(...rates.map((r) => r.termMin)),
-      maxTermMonths: Math.max(...rates.map((r) => r.termMax)),
-      capitalization: rates.some((r) => r.capitalization),
-      rates,
-    });
-  }
-  return deposits;
-}
-
 function resolveDataDir(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..", "data");
 }
@@ -296,15 +207,12 @@ async function main(): Promise<void> {
   }
 
   const market = parseMarketCatalog(pagesDir);
-  const deposits = parseDeposits(pagesDir);
 
   console.error(`[update:data] Megamarket: ${market.products.length} товаров, ${Object.keys(market.details).length} с деталью`);
   if (market.products.length > 0) {
     const sample = market.products[0];
     console.error(`[update:data]   пример: ${sample.id} — «${sample.title}» — ${sample.price ?? "?"} ₽`);
   }
-  console.error(`[update:data] Вклады: ${deposits.length} продуктов`);
-  for (const d of deposits) console.error(`[update:data]   ${d.name}: ${d.rates.length} ставок`);
 
   if (dryRun) {
     console.error("[update:data] --dry-run: файлы не записаны.");
@@ -312,12 +220,10 @@ async function main(): Promise<void> {
   }
 
   if (market.products.length === 0) throw new Error("пустой каталог Megamarket — данные не записаны");
-  if (deposits.length === 0) throw new Error("пустая линейка вкладов — данные не записаны");
 
   const dataDir = resolveDataDir();
   mkdirSync(dataDir, { recursive: true });
   writeFileSync(join(dataDir, "market.json"), JSON.stringify(market, null, 2) + "\n");
-  writeFileSync(join(dataDir, "deposits.json"), JSON.stringify({ deposits }, null, 2) + "\n");
   console.error(`[update:data] готово. Данные — в ${dataDir}.`);
 }
 

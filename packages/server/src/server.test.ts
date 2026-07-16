@@ -4,7 +4,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createServer } from "./server.js";
 import { PING_UI_RESOURCE_URI } from "./ui-resource.js";
-import { DEPOSITS_UI_RESOURCE_URI } from "./deposits/deposits-ui-resource.js";
+import { MEGAMARKET_UI_RESOURCE_URI } from "./megamarket/megamarket-ui-resource.js";
 import { StdioTransportProvider } from "./transport/stdio-transport-provider.js";
 
 const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
@@ -12,7 +12,7 @@ const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
 /** Поднять сервер, связанный с in-memory клиентом, — тестовая граница на уровне инструментов MCP. */
 async function connectTestClient() {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const server = createServer({ pingHtml: FAKE_HTML, megamarketHtml: FAKE_HTML, depositsHtml: FAKE_HTML });
+  const server = createServer({ pingHtml: FAKE_HTML, megamarketHtml: FAKE_HTML });
   const client = new Client({ name: "test-client", version: "1.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   return { client, server };
@@ -54,25 +54,35 @@ test("ui:// resource serves the bundled HTML with the MCP-app mime type", async 
   await server.close();
 });
 
-test("createServer wires the deposits app: search_deposits tool + its ui:// resource", async () => {
+
+test("createServer wires the megamarket app: every tool + its ui:// resource", async () => {
   const { client, server } = await connectTestClient();
   const { tools } = await client.listTools();
-  const deposits = tools.find((t) => t.name === "search_deposits");
-  assert.ok(deposits, "search_deposits tool should be registered by createServer");
-  const ui = (deposits?._meta as { ui?: { resourceUri?: string } } | undefined)?.ui;
-  assert.equal(ui?.resourceUri, DEPOSITS_UI_RESOURCE_URI);
-
-  const { contents } = await client.readResource({ uri: DEPOSITS_UI_RESOURCE_URI });
-  assert.equal((contents[0] as { text?: string }).text, FAKE_HTML);
+  for (const name of [
+    "search_products",
+    "search_products_widget",
+    "search_products_advised",
+    "get_product",
+    "add_to_cart",
+    "view_cart",
+    "checkout",
+  ]) {
+    assert.ok(tools.some((t) => t.name === name), `${name} should be registered by createServer`);
+  }
   await server.close();
 });
 
-test("createServer wires the megamarket app: all five tools + its ui:// resource", async () => {
+// Ступени демо переключаются формулировкой, поэтому обе привязки должны существовать
+// одновременно на одном подключении — без перезапуска сервера.
+test("createServer exposes the no-UI and the widget search rungs side by side", async () => {
   const { client, server } = await connectTestClient();
   const { tools } = await client.listTools();
-  for (const name of ["search_products", "get_product", "add_to_cart", "view_cart", "checkout"]) {
-    assert.ok(tools.some((t) => t.name === name), `${name} should be registered by createServer`);
-  }
+  const uiOf = (name: string) =>
+    (tools.find((t) => t.name === name)?._meta as { ui?: { resourceUri?: string } } | undefined)?.ui
+      ?.resourceUri;
+  assert.equal(uiOf("search_products"), undefined, "the no-UI rung must not declare a ui:// resource");
+  assert.equal(uiOf("search_products_widget"), MEGAMARKET_UI_RESOURCE_URI);
+  assert.equal(uiOf("search_products_advised"), MEGAMARKET_UI_RESOURCE_URI);
   await server.close();
 });
 

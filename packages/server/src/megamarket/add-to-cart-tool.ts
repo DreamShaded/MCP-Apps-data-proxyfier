@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import * as cartStore from "../data-source/cart-store.js";
 import { MEGAMARKET_UI_RESOURCE_URI } from "./megamarket-ui-resource.js";
 import { type AddToCartResult, addToCartResultSchema } from "./cart.js";
+import { goods } from "./plural.js";
 
 /**
  * Инструмент `add_to_cart`: добавляет товар (по id из статического каталога) в in-memory
@@ -34,5 +35,5 @@ export function registerAddToCartTool(server: McpServer): void {
 /** Человекочитаемая сводка для текстового канала чата (рядом с UI-корзиной). */
 function summarize(r: AddToCartResult): string {
   if (!r.added) return "Товар не найден в каталоге Megamarket — не добавлен в корзину.";
-  return `Товар добавлен в корзину Megamarket: ${r.cart.totalCount} товаров в корзине.`;
+  return `Товар добавлен в корзину Megamarket: в корзине ${goods(r.cart.totalCount)}.`;
 }

@@ -25,7 +25,6 @@ async function connectOverHttp() {
   const server = createServer({
     pingHtml: FAKE_HTML,
     megamarketHtml: FAKE_HTML,
-    depositsHtml: FAKE_HTML,
     sessionChecker: fakeSessionChecker,
     driver: fakeDriver,
   });
@@ -57,7 +56,7 @@ test("same tools are listed over the http transport", async () => {
   const { client, teardown } = await connectOverHttp();
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name);
-  for (const expected of ["ping", "search_products", "search_deposits"]) {
+  for (const expected of ["ping", "search_products", "search_products_widget"]) {
     assert.ok(names.includes(expected), `${expected} should be listed over http`);
   }
   await teardown();

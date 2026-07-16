@@ -7,13 +7,34 @@ function formatPrice(value: number): string {
 }
 
 /**
- * Вью деталки товара: шапка с «Назад», галерея (главное фото + превью), блок цены,
- * рейтинг, характеристики таблицей, описание и кнопка «в корзину». Вертикальная
- * компоновка вместо широкой десктопной — адаптация под узкий чат-iframe.
+ * Шумоподавление показываем отдельной строкой, поэтому исходную характеристику из
+ * `specs` прячем — иначе в таблице two раза подряд одно и то же. Совпадение узкое:
+ * «Шумоподавление микрофона» — про другое, его прятать нельзя.
+ */
+const ANC_SPEC = /активн[а-яё]*\s+шумоподавлени/i;
+
+/** Одна строка инфо-таблицы; `accent` подсвечивает доставку — ради неё сюда и заходят. */
+function InfoRow({ name, value, accent }: { name: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`mm-specs__row${accent ? " mm-specs__row--accent" : ""}`}>
+      <dt className="mm-specs__name">{name}</dt>
+      <dd className="mm-specs__value">{value}</dd>
+    </div>
+  );
+}
+
+/**
+ * Вью деталки товара: «Назад», галерея (главное фото + превью), цена, рейтинг, «В корзину»
+ * и таблица с информацией о товаре — первой строкой доставка. Вертикальная компоновка
+ * вместо широкой десктопной — адаптация под узкий чат-iframe.
  *
- * «Назад» — чисто клиентское переключение (родитель держит выдачу в стейте), поэтому
- * это обычный onClick без обращения к серверу. «В корзину» инициирует app-side
- * `add_to_cart(id)` через родителя; во время живого добавления кнопка показывает спиннер.
+ * Открывается двумя путями с одинаковым результатом: кликом «Подробнее» в гриде и
+ * голосом («покажи подробнее вот эти») — во втором случае хост присылает результат
+ * `get_product`.
+ *
+ * «Назад» — чисто клиентское переключение (родитель держит выдачу и фильтры в стейте),
+ * поэтому обычный onClick без обращения к серверу. «В корзину» инициирует app-side
+ * `add_to_cart(id)` через родителя; нового пузыря в чате нет, обновляется тот же App.
  */
 export function ProductDetailView({
   detail,
@@ -24,10 +45,11 @@ export function ProductDetailView({
   detail: ProductDetail;
   onBack: () => void;
   onAddToCart: () => void;
-  /** Идёт добавление этой карточки в корзину — спиннер в CTA. */
+  /** Идёт добавление именно этой карточки — спиннер в CTA. */
   adding: boolean;
 }) {
   const { title, price, oldPrice, discountPercent, rating, reviewCount, images, specs, description } = detail;
+  const { brand, anc, delivery } = detail;
   const [active, setActive] = useState(0);
   const main = images[active] ?? images[0] ?? null;
 
@@ -99,19 +121,20 @@ export function ProductDetailView({
         )}
       </button>
 
-      {specs.length ? (
-        <div className="mm-detail__section">
-          <h2 className="mm-detail__subtitle">Характеристики</h2>
-          <dl className="mm-specs">
-            {specs.map((s) => (
-              <div className="mm-specs__row" key={s.name}>
-                <dt className="mm-specs__name">{s.name}</dt>
-                <dd className="mm-specs__value">{s.value}</dd>
-              </div>
+      <div className="mm-detail__section">
+        <h2 className="mm-detail__subtitle">О товаре</h2>
+        <dl className="mm-specs">
+          <InfoRow name="Доставка" value={`${delivery.label} · ${delivery.date}`} accent />
+          {brand ? <InfoRow name="Бренд" value={brand} /> : null}
+          {/* `null` — характеристики нет в снапшоте; писать «Нет» было бы враньём. */}
+          <InfoRow name="Шумоподавление" value={anc === null ? "Не указано" : anc ? "Да" : "Нет"} />
+          {specs
+            .filter((s) => !ANC_SPEC.test(s.name))
+            .map((s) => (
+              <InfoRow key={s.name} name={s.name} value={s.value} />
             ))}
-          </dl>
-        </div>
-      ) : null}
+        </dl>
+      </div>
 
       {description ? (
         <div className="mm-detail__section">

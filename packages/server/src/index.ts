@@ -13,7 +13,6 @@ async function main(provider: ServerTransportProvider = selectTransportProvider(
   const server = createServer({
     pingHtml: loadUiHtml("index"),
     megamarketHtml: loadUiHtml("megamarket"),
-    depositsHtml: loadUiHtml("deposits"),
   });
 
   let closing = false;

@@ -29,7 +29,7 @@ export function ProductCard({
   /** Идёт какая-то операция (деталка/добавление) — кнопки заблокированы против гонки. */
   busy: boolean;
 }) {
-  const { title, price, oldPrice, discountPercent, imageUrl, rating, reviewCount } = product;
+  const { title, price, oldPrice, discountPercent, imageUrl, rating, reviewCount, delivery } = product;
   return (
     <article className="mm-card">
       <div className="mm-card__media">
@@ -64,6 +64,11 @@ export function ProductCard({
         ) : (
           <div className="mm-card__rating mm-card__rating--empty">Нет оценок</div>
         )}
+
+        {/* На быстрой доставке держится кейс «успеть к сроку» — выделяем её в карточке. */}
+        <div className={`mm-card__delivery${delivery.days <= 2 ? " mm-card__delivery--fast" : ""}`}>
+          <span className="mm-card__delivery-label">Доставка</span> {delivery.label}
+        </div>
 
         <div className="mm-card__actions">
           <button type="button" className="mm-card__add" onClick={onAdd} disabled={busy}>

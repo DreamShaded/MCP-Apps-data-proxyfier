@@ -19,6 +19,13 @@ export const megamarketTokens = {
     discountText: "#FFFFFF",
     /** Звезда рейтинга. */
     rating: "#FFAC47",
+    /**
+     * Быстрая доставка. Взято из реального CSS сайта (`--pui-feedback-text-success`), а не
+     * подобрано: фирменный зелёный Сбера (`#08A652`) здесь не при чём — это отдельный
+     * success-токен дизайн-системы pui.
+     */
+    success: "#43B057",
+    successSoft: "#E5FFEA",
     text: "#15181A",
     textMuted: "#6B7280",
     /** Старая (зачёркнутая) цена. */
@@ -51,6 +58,8 @@ export function tokensToCssVars(t: MegamarketTokens = megamarketTokens): string 
     `--mm-discount-bg:${t.color.discountBg}`,
     `--mm-discount-text:${t.color.discountText}`,
     `--mm-rating:${t.color.rating}`,
+    `--mm-success:${t.color.success}`,
+    `--mm-success-soft:${t.color.successSoft}`,
     `--mm-text:${t.color.text}`,
     `--mm-text-muted:${t.color.textMuted}`,
     `--mm-old-price:${t.color.oldPrice}`,

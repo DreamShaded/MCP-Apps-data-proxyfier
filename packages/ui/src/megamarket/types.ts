@@ -4,6 +4,16 @@
  * сознательно: это граница postMessage-моста между хостом и iframe, общий тип-пакет
  * ради одного DTO — оверкилл (YAGNI).
  */
+/** Срок доставки. Зеркалит `deliverySchema`; дату сервер считает на момент вызова. */
+export interface Delivery {
+  /** Через сколько дней приедет: 1 — завтра. */
+  days: number;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  /** Подпись как на сайте: «Завтра», «Послезавтра», «18 июля». */
+  label: string;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -15,6 +25,9 @@ export interface Product {
   reviewCount: number | null;
   url: string | null;
   brand: string | null;
+  /** Активное шумоподавление; `null` — характеристики нет в снапшоте («неизвестно»). */
+  anc: boolean | null;
+  delivery: Delivery;
 }
 
 export interface SearchResult {

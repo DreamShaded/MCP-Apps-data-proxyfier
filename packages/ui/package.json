@@ -5,8 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build && UI_ENTRY=deposits vite build",
+    "build": "tsc --noEmit && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build",
     "test": "node --test --import tsx 'src/**/*.test.ts'",
+    "update:fixtures": "tsx scripts/update-fixtures.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -15,6 +16,8 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/node": "^22.19.20",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
