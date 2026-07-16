@@ -46,14 +46,23 @@ export function registerAppHtmlResource(
   uri: string,
   html: string,
   description: string,
+  /**
+   * Origins, с которых приложению разрешено тянуть картинки/шрифты/медиа. По умолчанию
+   * песочница не пускает **никуда**: «empty or omitted → no network resources» (спека
+   * `McpUiResourceCsp.resourceDomains`). Не объявишь — фото товаров не загрузятся.
+   */
+  resourceDomains?: string[],
 ): void {
+  const ui = resourceDomains?.length ? { csp: { resourceDomains } } : undefined;
   registerAppResource(
     server,
     name,
     uri,
-    { description },
+    // В листинге — чтобы хост видел требования ещё на `resources/list`; на content-item —
+    // потому что там значение авторитетное (оно перекрывает листинг).
+    ui ? { description, _meta: { ui } } : { description },
     async () => ({
-      contents: [{ uri, mimeType: RESOURCE_MIME_TYPE, text: html }],
+      contents: [{ uri, mimeType: RESOURCE_MIME_TYPE, text: html, ...(ui ? { _meta: { ui } } : {}) }],
     }),
   );
 }

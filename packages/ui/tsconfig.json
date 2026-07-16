@@ -6,6 +6,8 @@
     "types": ["vite/client"],
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  // Тесты тайпчекаются вместе с кодом: гоняет их tsx, который типы не проверяет, — без
+  // этого `tsc` зеленеет на тестах, ссылающихся на удалённое. В бандл они не попадают:
+  // Vite собирает от точек входа (`*.html`), а не от tsconfig.
+  "include": ["src", "vite.config.ts"]
 }

@@ -1,0 +1,6 @@
+{
+  // Сборка: то же, что tsconfig.json, но без тестов — им нечего делать в dist/.
+  // Тайпчек тестов живёт в tsconfig.json (см. комментарий там).
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/*.test.ts"]
+}

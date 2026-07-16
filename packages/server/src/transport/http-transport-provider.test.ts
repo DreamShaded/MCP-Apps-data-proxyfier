@@ -8,13 +8,6 @@ import { HttpTransportProvider } from "./http-transport-provider.js";
 
 const FAKE_HTML = "<!doctype html><html><body>scaffold ui</body></html>";
 
-/** Те же фейки, что в server.test.ts: каркасный тест не поднимает Chromium. */
-const fakeDriver = {
-  withPage: async <T>(fn: (page: never) => Promise<T>): Promise<T> => fn(undefined as never),
-  close: async () => {},
-};
-const fakeSessionChecker = { checkSession: async () => [] };
-
 /**
  * Поднять сервер по HTTP-транспорту на свободном порту (`port: 0`) и подключить
  * реальный SDK-клиент по Streamable HTTP — граница «те же инструменты/ресурсы
@@ -22,12 +15,7 @@ const fakeSessionChecker = { checkSession: async () => [] };
  */
 async function connectOverHttp() {
   const provider = new HttpTransportProvider({ port: 0 });
-  const server = createServer({
-    pingHtml: FAKE_HTML,
-    megamarketHtml: FAKE_HTML,
-    sessionChecker: fakeSessionChecker,
-    driver: fakeDriver,
-  });
+  const server = createServer({ pingHtml: FAKE_HTML, megamarketHtml: FAKE_HTML });
   const transport = await provider.create();
   await server.connect(transport);
 

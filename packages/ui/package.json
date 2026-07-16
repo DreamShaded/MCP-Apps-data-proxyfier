@@ -5,8 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build",
-    "test": "node --test --import tsx 'src/**/*.test.ts'",
+    "build": "pnpm typecheck && UI_ENTRY=index vite build && UI_ENTRY=megamarket vite build",
+    "typecheck": "tsc --noEmit && tsc -p scripts/tsconfig.json --noEmit",
+    "test": "pnpm typecheck && node --test --import tsx 'src/**/*.test.ts'",
     "update:fixtures": "tsx scripts/update-fixtures.ts",
     "preview": "vite preview"
   },
